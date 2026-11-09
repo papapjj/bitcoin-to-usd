@@ -1,0 +1,33 @@
+experiment:
+  id: mt5_reward_ablation_feb_direct_adaptive_owner_rankhold32
+  schema_version: 1
+  source_config: configs/experiments/mt5_reward_ablation_feb_direct_adaptive_owner_low_disk.yaml
+  clone_only: true
+  bridge_input_count: 137
+  bridge_output_count: 20
+  artifact_version: 18
+
+app_overrides:
+  mt5_learning_enabled: true
+
+learning_overrides:
+  # Intermediate cadence: more responsive than the 64-packet production
+  # unroll, without the high-frequency overreaction seen at 16 packets.
+  five_pattern_unroll: 32
+
+gradient_contract:
+  curriculum: mt5_reward_ablation_direct_adaptive_owner_rankhold32
+  entry_lifecycle_actor_rows_0_6: trainable
+  timing_gate: disabled
+  conditional_entry_ranking: trainable
+  sole_writer: five_ppo_adam
+
+isolation:
+  sequential_only: true
+  candidate_output_quota_bytes: 805306368
+  reserve_floor_bytes: 134217728
+  event_jsonl_max_bytes: 16777216
+  execution_trace_max_bytes: 33554432
+  preserve_source_seed: true
+  preserve_source_model: true
+  preserve_source_config: true

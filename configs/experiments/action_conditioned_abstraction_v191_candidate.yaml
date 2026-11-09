@@ -1,0 +1,89 @@
+experiment:
+  id: action_conditioned_abstraction_v191_candidate
+  schema_version: 2
+  source_config: configs/he_chuyen_gia_mot_context_mot_policy.yaml
+  clone_only: true
+  bridge_input_count: 137
+  bridge_output_count: 20
+  artifact_version: 17
+
+learning_overrides:
+  # Exploration is restricted to HOLD + six legal entry actions. Management
+  # remains deterministic and lifecycle actor credit is importance-clipped.
+  train_entry_probe_enabled: false
+  direct_rnn_rl_exploration_enabled: true
+  direct_rnn_rl_exploration_rate: 0.10
+  direct_rnn_rl_exploration_min_action_probability: 0.02
+  direct_rnn_rl_exploration_importance_clip: 2.0
+  direct_rnn_rl_entropy_weight: 0.002
+  direct_rnn_rl_entry_preference_horizon_bars: 48
+  direct_rnn_rl_entry_abstraction_horizon_bars: 600
+  direct_rnn_rl_delayed_reconciliation_enabled: true
+  direct_rnn_rl_delayed_importance_clip: 1.0
+  direct_rnn_rl_delayed_policy_kl_temperature: 0.25
+  direct_rnn_rl_delayed_max_policy_js: 0.50
+  direct_rnn_rl_delayed_min_effective_weight: 0.02
+  direct_rnn_rl_delayed_lifecycle_encoder_credit_scale: 0.0
+  direct_rnn_rl_delayed_counterfactual_encoder_credit_scale: 0.25
+  direct_rnn_rl_delayed_preference_target_mode: counterfactual_consensus_v3
+  direct_rnn_state_memory_enabled: false
+  direct_rnn_state_memory_capacity: 32
+  direct_rnn_state_memory_size: 32
+  direct_rnn_state_memory_min_history: 4
+  direct_rnn_state_memory_temperature: 0.35
+  direct_rnn_state_memory_injection_scale: 0.50
+  direct_rnn_state_memory_path_delta_scale: 0.75
+  tensor_rule_enabled: true
+  tensor_rule_authority: residual
+  tensor_rule_sequence_length: 32
+  tensor_rule_input_size: 78
+  tensor_rule_hidden_size: 64
+  tensor_rule_encoder_layers: 2
+  tensor_rule_attention_heads: 4
+  tensor_rule_ffn_size: 128
+  tensor_rule_max_rules: 16
+  tensor_rule_initial_rules: 2
+  tensor_rule_min_valid_length: 16
+  tensor_rule_unknown_membership: 0.55
+  tensor_rule_membership_temperature: 0.04
+  tensor_rule_motif_distance_weight: 0.75
+  tensor_rule_utility_assignment_temperature: 0.15
+  tensor_rule_actor_residual_clip: 0.25
+  tensor_rule_trade_margin_r: 0.10
+  tensor_rule_entry_lcb_gate_enabled: true
+  tensor_rule_effective_batch_size: 64
+  tensor_rule_ready_gradient_norm_budget: 0.50
+  tensor_rule_component_size: 16
+  tensor_rule_action_latent_size: 32
+  tensor_rule_counterfactual_encoder_credit_scale: 0.25
+  tensor_rule_lifecycle_encoder_credit_scale: 0.0
+  tensor_rule_utility_contrastive_margin: 0.20
+  execution_trace_observatory_max_bytes: 67108864
+
+label_contract:
+  immutable_counterfactual_path: 48-M1
+  sparse_return_horizons_minutes: [20, 60, 240, 360, 600]
+  return_names: [H1/3, H1, H4, H6, H10]
+  return_quantiles: [0.10, 0.50, 0.90]
+  regime_transition_m15_horizons: [8, 16, 24, 32]
+  regime_transition_names: [H2, H4, H6, H8]
+  delayed_targets_only: true
+
+gradient_contract:
+  delayed_reconciliation: current_weight_causal_reforward_v1
+  executed_action_importance_sampling: clipped_plus_js_gate_v1
+  preference_target: counterfactual_consensus_v3
+  lifecycle_encoder_credit_scale: 0.0
+  counterfactual_encoder_credit_scale: 0.25
+  executed_action_adapter_only: true
+  sole_writer: direct_rnn_adamw
+
+isolation:
+  sequential_only: true
+  candidate_output_quota_bytes: 3221225472
+  reserve_floor_bytes: 2684354560
+  event_jsonl_max_bytes: 33554432
+  execution_trace_max_bytes: 67108864
+  preserve_source_seed: true
+  preserve_source_model: true
+  preserve_source_config: true

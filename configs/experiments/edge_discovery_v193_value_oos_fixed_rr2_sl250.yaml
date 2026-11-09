@@ -1,0 +1,10 @@
+# Hồ sơ khảo sát ghép cặp cho đầu ra V21; không bật học trực tuyến.
+extends: edge_discovery_v193_value_oos_fixed_rr2_low_disk.yaml
+
+orders:
+  max_holding_bars: 48
+  pending_expiry_bars: 5
+  technical_min_rr: 2.0
+  fixed_sl_atr: 2.5
+  fixed_tp_atr: 5.0
+  entry_offset_atr: 5.0

@@ -1,0 +1,24 @@
+name: impulse_pullback_higher_low
+history_bars: 128
+future_bars: 64
+min_gap_bars: 16
+legs:
+  - direction: up
+    min_atr: 1.5
+    max_atr: 20.0
+    min_bars: 2
+    max_bars: 80
+  - direction: down
+    min_atr: 0.4
+    max_atr: 15.0
+    min_bars: 2
+    max_bars: 80
+    min_ratio_prev: 0.15
+    max_ratio_prev: 0.80
+  - direction: up
+    min_atr: 0.8
+    max_atr: 20.0
+    min_bars: 2
+    max_bars: 80
+    min_ratio_prev: 0.60
+    max_ratio_prev: 3.50

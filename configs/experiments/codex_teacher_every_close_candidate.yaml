@@ -1,0 +1,36 @@
+experiment:
+  id: codex_teacher_every_close_candidate
+  schema_version: 5
+  source_config: configs/he_chuyen_gia_codex_teacher_candidate.yaml
+  clone_only: true
+  bridge_input_count: 137
+  bridge_output_count: 20
+  artifact_version: 18
+
+app_overrides:
+  # Codex teacher is itself a bounded candidate optimizer, so unlike the
+  # frozen edge-discovery smoke profile this run must permit MT5 learning.
+  mt5_learning_enabled: true
+
+# Do not replace the teacher config's learning contract here. In particular,
+# legacy online reward, policy-RLHF writer and MT5 failure replay remain
+# isolated by configs/he_chuyen_gia_codex_teacher_candidate.yaml.
+learning_overrides: {}
+expectancy_overrides: {}
+
+gradient_contract:
+  curriculum: codex_teacher_every_final_close_v2
+  entry_lifecycle_actor_rows_0_6: teacher_owned_only
+  timing_gate: disabled
+  conditional_entry_ranking: disabled
+  sole_writer: codex_teacher_five_adam_action_head
+
+isolation:
+  sequential_only: true
+  candidate_output_quota_bytes: 12884901888
+  reserve_floor_bytes: 1610612736
+  event_jsonl_max_bytes: 33554432
+  execution_trace_max_bytes: 67108864
+  preserve_source_seed: true
+  preserve_source_model: true
+  preserve_source_config: true

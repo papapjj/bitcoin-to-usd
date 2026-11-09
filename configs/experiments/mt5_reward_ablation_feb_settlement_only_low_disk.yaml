@@ -1,0 +1,61 @@
+experiment:
+  id: mt5_reward_ablation_feb_settlement_only
+  schema_version: 1
+  source_config: configs/experiments/edge_discovery_v193_value_oos_fixed_rr2_sl250.yaml
+  clone_only: true
+  bridge_input_count: 137
+  bridge_output_count: 20
+  artifact_version: 18
+
+app_overrides:
+  mt5_learning_enabled: true
+
+learning_overrides:
+  input_normalization_mode: raw
+  five_reward_mode: settlement_net_r_v1
+  five_reward_settlement_weight: 1.0
+  five_reward_mark_to_market_weight: 0.0
+  five_reward_settlement_clip_r: 3.0
+  five_reward_drawdown_weight: 0.0
+  five_reward_risk_excess_weight: 0.0
+  five_reward_conflict_weight: 0.0
+  five_lifecycle_net_r_credit_enabled: true
+  five_lifecycle_net_r_credit_weight: 1.0
+  five_lifecycle_net_r_credit_clip_r: 2.5
+  five_lifecycle_batch_size: 16
+  five_lifecycle_batch_max_wait: 16
+  entry_guard_single_position: false
+  # Reward ablation must allow the actor to react within a short MT5 window.
+  # The default imitation retention (32 frozen / 256 anchored updates) was
+  # longer than the observed run: reward arrived, but the action head could
+  # not move before the window ended.
+  five_imitation_freeze_updates: 0
+  five_imitation_anchor_updates: 0
+  five_imitation_anchor_weight: 0.0
+  # Candidate-only: veto an exact entry action only after reconciled,
+  # context-matched negative policy-origin evidence is statistically eligible.
+  five_expectancy_action_veto_enabled: true
+  five_expectancy_action_veto_min_samples: 12
+  five_expectancy_action_veto_min_confidence: 0.20
+  five_expectancy_action_veto_min_lcb_r: -0.15
+  five_mt5_failure_replay_sessions_per_run: 0
+  five_action_decision_mode: checkpoint
+  execution_trace_observatory_max_bytes: 33554432
+  execution_trace_observatory_include_recurrent_state: false
+
+gradient_contract:
+  curriculum: mt5_reward_ablation_settlement_only
+  entry_lifecycle_actor_rows_0_6: trainable
+  timing_gate: disabled
+  conditional_entry_ranking: trainable
+  sole_writer: five_ppo_adam
+
+isolation:
+  sequential_only: true
+  candidate_output_quota_bytes: 805306368
+  reserve_floor_bytes: 134217728
+  event_jsonl_max_bytes: 16777216
+  execution_trace_max_bytes: 33554432
+  preserve_source_seed: true
+  preserve_source_model: true
+  preserve_source_config: true

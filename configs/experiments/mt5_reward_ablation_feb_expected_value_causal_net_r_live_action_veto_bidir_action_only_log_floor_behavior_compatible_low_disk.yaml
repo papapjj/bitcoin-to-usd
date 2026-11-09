@@ -1,0 +1,95 @@
+# Follow-up to the raw-logit log-floor arm.  This profile is intentionally
+# self-contained because the candidate runner applies profile overrides over
+# --config and does not recursively merge profile `extends` metadata.  It
+# changes only the frozen-validation behavior contract and remains
+# research-only; it must not be used as a production profile.
+experiment:
+  id: mt5_reward_ablation_feb_expected_value_causal_net_r_live_action_veto_bidir_action_only_log_floor_behavior_compatible
+  schema_version: 1
+  source_config: configs/experiments/edge_discovery_v193_value_oos_fixed_rr2_sl250.yaml
+  clone_only: true
+  bridge_input_count: 137
+  bridge_output_count: 20
+  artifact_version: 18
+
+app_overrides:
+  mt5_learning_enabled: true
+
+learning_overrides:
+  input_normalization_mode: raw
+  mt5_online_update_scale: 0.25
+  five_reward_mode: settlement_net_r_v1
+  five_reward_settlement_weight: 1.0
+  five_reward_mark_to_market_weight: 0.0
+  five_reward_settlement_clip_r: 3.0
+  five_reward_drawdown_weight: 0.0
+  five_reward_risk_excess_weight: 0.0
+  five_reward_conflict_weight: 0.0
+  five_reward_competition_weight: 0.0
+  five_reward_terminal_rank_weight: 0.0
+  five_reward_expectancy_wr_v2_enabled: false
+  five_reward_expectancy_shortfall_weight: 0.0
+  five_reward_tail_loss_weight: 0.0
+  five_lifecycle_reward_enabled: false
+  five_lifecycle_net_r_credit_enabled: true
+  five_lifecycle_net_r_credit_weight: 1.0
+  five_lifecycle_net_r_credit_clip_r: 3.0
+  five_pattern_reward_enabled: false
+  five_entry_preference_supervision_enabled: true
+  direct_rnn_rl_entry_preference_include_hold_snapshots: true
+  five_pattern_action_quality_reward_scale_r: 0.0
+  five_action_ranking_bidirectional_enabled: true
+  five_action_ranking_min_qualified_entries: 1
+  five_lifecycle_batch_size: 16
+  five_lifecycle_batch_max_wait: 16
+  five_entropy_edge_gate_enabled: true
+  five_entropy_edge_release_count: 3
+  five_entropy_edge_decay_count: 8
+  entry_guard_single_position: false
+  five_imitation_freeze_updates: 0
+  five_imitation_anchor_updates: 0
+  five_imitation_anchor_weight: 0.0
+  five_action_decision_mode: expected_value
+  five_pattern_unroll: 8
+  five_behavior_uniform_mix: 0.05
+  five_behavior_entry_probability_floor: 0.02
+  five_flat_entry_mass_floor_start: 0.35
+  five_flat_entry_mass_floor_end: 0.10
+  five_flat_entry_mass_loss_weight: 1.0
+  five_flat_entry_mass_log_loss_weight: 0.10
+  five_expectancy_action_veto_enabled: true
+  five_expectancy_action_veto_min_samples: 12
+  five_expectancy_action_veto_min_confidence: 0.20
+  five_expectancy_action_veto_min_lcb_r: -0.15
+  five_expectancy_action_veto_hold_owner_on_negative: false
+  five_live_action_veto_enabled: true
+  five_live_action_veto_min_samples: 12
+  five_live_action_veto_min_confidence: 0.20
+  five_live_action_veto_min_lcb_r: -0.15
+  five_live_action_veto_hold_owner_on_negative: false
+  five_live_action_veto_probe_enabled: false
+  five_live_action_veto_probe_interval_decisions: 64
+  five_live_action_veto_probe_on_negative_transition: false
+  five_live_owner_exploration_enabled: false
+  five_failure_replay_enabled: false
+  five_mt5_failure_replay_enabled: false
+  five_mt5_failure_replay_sessions_per_run: 0
+  execution_trace_observatory_max_bytes: 33554432
+  execution_trace_observatory_include_recurrent_state: false
+  five_frozen_behavior_sampling_enabled: true
+  five_frozen_behavior_sampling_seed: 20260702
+
+gradient_contract:
+  curriculum: mt5_reward_ablation_feb_expected_value_causal_net_r_live_action_veto_bidir_action_only_log_floor_behavior_compatible
+  entry_lifecycle_actor_rows_0_6: trainable
+  timing_gate: disabled
+  conditional_entry_ranking: trainable
+  sole_writer: five_ppo_adam
+
+isolation:
+  sequential_only: true
+  candidate_output_quota_bytes: 2147483648
+  reserve_floor_bytes: 134217728
+  preserve_source_seed: true
+  preserve_source_model: true
+  preserve_source_config: true

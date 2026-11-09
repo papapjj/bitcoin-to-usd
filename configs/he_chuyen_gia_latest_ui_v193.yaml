@@ -1,0 +1,167 @@
+# Cấu hình train bắt buộc của UI V193. Kế thừa full contract V191 đã kiểm thử
+# và chỉ thay curriculum entry sang học timing trước.
+extends: he_chuyen_gia_latest_ui_v191.yaml
+
+risk:
+  # 0 = không có quota số vị thế/lệnh chờ trong Python hoặc EA. Lệnh mới chỉ
+  # còn bị từ chối bởi tính hợp lệ của broker, chế độ tài khoản hoặc ký quỹ.
+  max_positions: 0
+  enforce_entry_limits: false
+
+# Kiến trúc v2: năm tác nhân, một bộ trọng số dùng chung, ký ức LSTM riêng và
+# một Transformer hậu-LSTM 512/8-head dùng chung trước các policy/value head.
+he_chuyen_gia:
+  che_do_quyet_dinh: nam_tac_nhan_dung_chung
+  so_tac_nhan: 5
+  so_chieu_nhan_dang_tac_nhan: 5
+  cho_phep_policy_chung_ra_lenh: true
+  entry_style_specialists_bat: false
+  position_management_specialist_bat: false
+  volatile_subexperts_bat: false
+
+orders:
+  # EA tự hủy LIMIT/STOP chưa khớp đúng sau 5 nến M1.
+  pending_expiry_bars: 5
+
+learning:
+  # Nếu seed đã qua imitation entry-mass v2, khóa toàn bộ teacher action trong
+  # 32 optimizer update MT5 đầu. Đến update 256 vẫn khóa
+  # encoder/LSTM/Transformer/base-action
+  # để không làm lệch hidden space; chỉ calibrator thích nghi dưới neo nhẹ. Trong warm-up giảm random
+  # mix và tắt loss ép vào lệnh để nhãn HOLD ở vùng không có đỉnh/đáy không
+  # bị workflow xóa ngay.
+  five_imitation_freeze_updates: 32
+  five_imitation_anchor_updates: 256
+  five_imitation_anchor_weight: 0.10
+  five_imitation_warmup_uniform_mix_max: 0.05
+  five_imitation_disable_flat_entry_floor_during_warmup: true
+  # Competitive Five reward: agent tối ưu net-R của chính nó nhưng bonus xếp
+  # hạng có tổng bằng 0, nên không thể thay thế lợi nhuận thật của toàn account.
+  five_training_schedule_steps: 10000
+  five_reward_drawdown_weight: 0.30
+  five_reward_risk_excess_weight: 0.10
+  five_reward_conflict_weight: 0.05
+  five_reward_competition_weight: 0.25
+  five_reward_terminal_rank_weight: 0.50
+  # Reward V2: expectancy sau chi phí vẫn là mục tiêu chính. WR shaping rất
+  # nhỏ và cân bằng winner/loss; lệnh lời cực nhỏ không thể che lệnh lỗ lớn.
+  five_reward_expectancy_wr_v2_enabled: true
+  five_reward_wr_target: 0.55
+  five_reward_wr_balance_weight: 0.05
+  five_reward_expectancy_floor_r: 0.05
+  five_reward_expectancy_shortfall_weight: 0.10
+  five_reward_tail_loss_threshold_r: 1.0
+  five_reward_tail_loss_weight: 0.10
+  five_reward_tail_loss_cap_r: 3.0
+  # Reward vòng đời V4 gắn đúng entry owner, tính đúng một lần sau khi đóng.
+  # Reward kinh tế giữ độc lập; tổng định hình luôn bị chặn trong ±0.75R.
+  five_lifecycle_reward_enabled: true
+  five_lifecycle_shape_clip_r: 0.75
+  five_lifecycle_min_sl_atr: 1.5
+  five_lifecycle_min_tp_atr: 3.0
+  five_lifecycle_geometry_penalty_r: 0.30
+  five_lifecycle_geometry_bonus_r: 0.05
+  # INITIAL_SL khong con tao scalar am lam tong xac suat entry chay sang
+  # HOLD/MANAGE. No tao loss cuc bo, chi ha entry sai trong nhom sau entry.
+  five_lifecycle_initial_sl_local_loss_weight: 1.0
+  # MFE mềm, liên tục: 0→-0.40R; 0.10→-0.30R; 0.25→-0.15R; 0.50→0.
+  five_lifecycle_mfe_penalty_zero_r: 0.40
+  five_lifecycle_mfe_penalty_010_r: 0.30
+  five_lifecycle_mfe_penalty_025_r: 0.15
+  five_lifecycle_mfe_penalty_neutral_at_r: 0.50
+  five_lifecycle_excursion_bonus_at_r: 1.0
+  five_lifecycle_excursion_good_mae_r: 0.25
+  five_lifecycle_excursion_bad_mae_r: 1.0
+  five_lifecycle_excursion_min_bonus_r: 0.15
+  five_lifecycle_excursion_max_bonus_r: 0.30
+  # Chỉ đánh giá trailing khi model thật sự yêu cầu và MFE từng đạt 0.50R.
+  five_lifecycle_trailing_activation_mfe_r: 0.50
+  five_lifecycle_trailing_capture_min_ratio: 0.50
+  five_lifecycle_trailing_capture_target_ratio: 0.80
+  five_lifecycle_trailing_missed_penalty_r: 0.20
+  five_lifecycle_trailing_small_capture_penalty_r: 0.10
+  five_lifecycle_trailing_min_bonus_r: 0.10
+  five_lifecycle_trailing_max_bonus_r: 0.25
+  five_lifecycle_exit_capture_min_ratio: 0.25
+  five_lifecycle_exit_capture_target_ratio: 0.80
+  five_lifecycle_exit_capture_min_bonus_r: 0.10
+  five_lifecycle_exit_capture_max_bonus_r: 0.30
+  five_lifecycle_recovery_min_bonus_r: 0.05
+  five_lifecycle_recovery_max_bonus_r: 0.15
+  five_lifecycle_pending_fill_max_bars: 5
+  five_lifecycle_pending_fill_min_bonus_r: 0.05
+  five_lifecycle_pending_fill_max_bonus_r: 0.10
+  # Gom đủ mẫu rồi lấy phân tầng action × kết quả × chế độ, không sửa nhãn.
+  five_lifecycle_batch_size: 32
+  five_lifecycle_batch_max_wait: 64
+  five_lifecycle_batch_neutral_band_r: 0.05
+  # MT5-native failure replay: old losing contexts return as fresh Strategy
+  # Tester episodes until current-policy probability stays repaired.
+  five_failure_replay_enabled: true
+  five_mt5_failure_replay_enabled: true
+  five_mt5_failure_replay_sessions_per_run: 12
+  five_mt5_failure_replay_max_attempts_per_case: 6
+  five_mt5_failure_replay_warmup_minutes: 120
+  five_mt5_failure_replay_horizon_minutes: 180
+  five_mt5_failure_replay_resolved_audit_items: 16
+  five_failure_replay_capacity: 256
+  five_failure_replay_admit_threshold_r: -0.25
+  five_failure_replay_repair_probability: 0.08
+  five_failure_replay_reopen_probability: 0.14
+  five_failure_replay_repair_streak: 3
+  five_failure_replay_audit_interval: 8
+  # Giu vi the dang cai thien duoc thuong dung bang PnL delta duong, khong co
+  # bonus HOLD co dinh va khong cong trung voi reward kinh te.
+  five_position_improvement_reward_weight: 1.0
+  # Phat rieng 1R neu model chon dong/quan ly khi snapshot truoc khong co vi the.
+  # Bao gom CLOSE_WORST/CLOSE_BEST/CLOSE_ALL va moi mode MANAGE: doi SL/TP,
+  # trailing, dong mot phan, dong toan phan. Khong mask action truoc EA.
+  five_invalid_position_action_no_position_penalty_r: 1.0
+  # Phat nang dung agent gui CANCEL_ORDERS khi snapshot khong co lenh cho.
+  # Khoan -2R nam ngoai reward doi; action van khong bi mask truoc EA.
+  five_invalid_cancel_no_pending_penalty_r: 2.0
+  # Qua du 5 bar van chua khop: phat nhe 0.25R vao dung trace dat lenh.
+  # Policy chu dong huy som khong tao thuong/phat hanh vi.
+  five_unfilled_pending_timeout_penalty_r: 0.25
+  # Hai cơ chế khám phá độc lập với reward: 15% hành vi đều và entropy 0.06.
+  five_behavior_uniform_mix: 0.15
+  # Khi tai khoan trong va chua du edge xac minh, policy goc phai de toi thieu
+  # 75% tong xac suat cho sau entry. San giam dan ve 0 tu edge 3 den edge 8.
+  five_flat_entry_mass_floor_start: 0.75
+  five_flat_entry_mass_floor_end: 0.0
+  five_flat_entry_mass_loss_weight: 1.0
+  five_entropy_start: 0.06
+  five_entropy_edge_gate_enabled: true
+  five_entropy_edge_release_count: 3
+  five_entropy_edge_decay_count: 8
+  # Reward scalar đường giá chỉ còn HOLD+tài khoản trống. MAE/MFE của entry
+  # không cộng tại đây vì đã được tính đúng một lần trong lifecycle V4.
+  five_pattern_reward_enabled: true
+  five_flat_hold_missed_edge_penalty_r: 0.25
+  five_flat_hold_confirmed_no_edge_bonus_r: 0.01
+  five_flat_hold_edge_threshold_r: 0.10
+  five_flat_hold_no_edge_threshold_r: -0.10
+  five_action_ranking_delta_r: 0.10
+  five_action_ranking_min_q_r: 0.10
+  five_action_ranking_min_hold_delta_r: 0.10
+  five_action_ranking_min_qualified_entries: 2
+  five_action_ranking_margin_scale: 0.50
+  five_action_ranking_margin_min: 0.05
+  five_action_ranking_margin_max: 1.00
+  five_action_ranking_loss_weight: 0.50
+  five_pattern_tree_auxiliary_loss_weight: 0.25
+  five_pattern_tree_min_edge_atr: 0.10
+  five_pattern_tree_mfe_weight: 0.15
+  five_pattern_tree_mae_weight: 0.25
+  five_pattern_tree_utility_clip_atr: 3.0
+  five_pattern_tree_utility_loss_weight: 1.0
+  five_pattern_tree_excursion_loss_weight: 0.50
+  five_pattern_tree_no_edge_loss_weight: 0.50
+  five_pattern_tree_direction_loss_weight: 1.0
+  five_pattern_tree_edge_hold_ceiling: 0.20
+  five_pattern_tree_hold_ceiling_loss_weight: 1.0
+  five_pattern_tree_horizon_loss_weight: 0.50
+  five_pattern_tree_path_dynamics_loss_weight: 0.50
+  five_pattern_tree_first_hit_loss_weight: 0.50
+  five_pattern_tree_action_path_loss_weight: 0.50
+  five_pattern_tree_action_outcome_loss_weight: 0.50

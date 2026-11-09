@@ -1,0 +1,14 @@
+# Ho so reasoning candidate danh rieng cho phep thu bay lua chon cung hop dong.
+# Khong dung de thay the ho so UI reasoning hien tai (2.5/5.0 ATR, khong ep
+# dong theo tuoi lenh); ho so nay chi duoc dung khi phat lai/MT5 dung bo nhan
+# 48 nen da ghi trong seven_choice_16w_ea_parity_v14.npz.
+extends: he_chuyen_gia_reasoning_rl_v1_candidate.yaml
+
+orders:
+  max_holding_bars: 48
+  pending_expiry_bars: 5
+  technical_min_rr: 2.0
+  fixed_sl_atr: 1.5
+  fixed_tp_atr: 3.0
+  entry_offset_atr: 5.0
+  max_spread_cost_r: 0.50

@@ -1,0 +1,84 @@
+data:
+  csv_path: C:\Users\Admin\Desktop\BTCUSDM1.csv
+  datetime_column: Datetime
+symbol:
+  price_digits: 2
+  point_size: 0.01
+  spread_in_points: true
+features:
+  atr_period: 14
+  ema_fast: 20
+  ema_slow: 60
+  range_window: 60
+  atr_percentile_window: 240
+  max_spread_atr: 50.0
+  shock_range_atr: 50.0
+risk:
+  initial_equity: 10000.0
+  min_risk_pct: 0.001
+  max_risk_pct: 0.02
+  max_open_risk_pct: 0.05
+  max_positions: 5
+  ruin_equity_pct: 0.5
+  enforce_entry_limits: false
+orders:
+  max_holding_bars: 60
+  pending_expiry_bars: 60
+  technical_min_rr: 1.2
+  max_spread_cost_r: 5.0
+  entry_offset_atr: 5.0
+splits:
+  train: 0.7
+  validation: 0.15
+  test: 0.15
+model:
+  config_path: self_growing.yaml
+  top_k_validation: 5
+  validation_interval: 5
+  train_windows: 1
+  train_window_bars: 2500
+observability:
+  enabled: false
+  event_path: outputs/neural_live.jsonl
+  decision_sample_every: 4
+  max_event_bytes: 134217728
+  max_active_nodes: 256
+  max_active_edges: 0
+  max_state_nodes: 512
+  max_state_edges: 1024
+  state_change_epsilon: 1.0e-06
+  reset_on_process_start: false
+
+learning:
+  seed: 20260629
+  require_real_ticks_for_promotion: true
+  # V8: reject promotion when the tester report lacks fresh real-tick evidence.
+  require_real_tick_evidence_for_promotion: true
+  frozen_oos: true
+  # V8: uncertainty can request shadow/replay work, never live entry.
+  live_curiosity_mode: shadow_only
+  # V9: HOLD still creates shadow BUY/SELL labels.  A replacement is possible
+  # only after local evidence is positive; a SELL loss never adds global HOLD.
+  action_recovery_enabled: true
+  action_recovery_min_support: 3.0
+  action_recovery_min_lcb: 0.08
+  action_recovery_merge_similarity: 0.90
+  action_recovery_shadow_weight: 0.50
+  action_recovery_max_cells_per_action: 128
+  entry_guard_single_position: true
+  entry_loss_guard_enabled: true
+  entry_loss_guard_min_closed: 6
+  entry_loss_guard_max_closed_loss_r: 0.25
+  entry_loss_guard_consecutive_losses: 4
+  session_timezone: UTC
+  mt5_server_utc_offset_hours: 0
+  spread_semantics: ask_minus_bid_price
+  experience_buffer_max: 4096
+  rejection_memory_max: 2048
+  execution_trace_cache_max: 8192
+  memory_neurons_max: 4096
+  memory_connections_max: 16384
+  mistake_episodes_max: 2048
+  promotion_min_oos_windows: 3
+  promotion_min_seeds: 3
+

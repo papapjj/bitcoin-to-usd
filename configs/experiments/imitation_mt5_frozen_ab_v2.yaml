@@ -1,0 +1,34 @@
+experiment:
+  id: imitation_mt5_frozen_ab_v2
+  schema_version: 2
+  source_config: configs/he_chuyen_gia_latest_ui_v193.yaml
+  clone_only: true
+  bridge_input_count: 137
+  bridge_output_count: 20
+
+# Phép đo nhân quả cho checkpoint imitation. Baseline và candidate phải dùng
+# cùng profile, cửa sổ, model và seed. Tắt toàn bộ cập nhật policy trong lúc
+# Strategy Tester chạy để khác biệt lệnh chỉ bắt nguồn từ trọng số imitation
+# và geometry đã có sẵn trong checkpoint.
+app_overrides:
+  mt5_learning_enabled: false
+
+learning_overrides:
+  five_frozen_behavior_sampling_enabled: true
+  five_frozen_behavior_sampling_seed: 20260702
+  five_mt5_failure_replay_enabled: false
+  five_mt5_failure_replay_sessions_per_run: 0
+  execution_trace_observatory_include_recurrent_state: false
+  # 0 = không rewrite/compact sau mỗi event. Output directory vẫn chịu quota
+  # riêng của candidate runner; causal run cần tốc độ và giữ trọn chuỗi audit.
+  execution_trace_observatory_max_bytes: 0
+
+isolation:
+  sequential_only: true
+  candidate_output_quota_bytes: 4294967296
+  reserve_floor_bytes: 1610612736
+  event_jsonl_max_bytes: 33554432
+  execution_trace_max_bytes: 67108864
+  preserve_source_seed: true
+  preserve_source_model: true
+  preserve_source_config: true

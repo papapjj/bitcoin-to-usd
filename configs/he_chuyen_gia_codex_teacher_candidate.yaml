@@ -1,0 +1,30 @@
+# Candidate-only: every confirmed owned close is queued for asynchronous Codex
+# grading while MT5 continues. This does not enable the old linear RLAIF model.
+extends: he_chuyen_gia_rlhf_reference_capture_candidate.yaml
+
+learning:
+  # Isolate Codex teacher from legacy online/lifecycle reward writers.
+  mt5_online_update_scale: 0.0
+  five_rlhf_reference_capture_enabled: true
+  five_rlhf_policy_update_enabled: false
+  five_mt5_failure_replay_enabled: false
+  five_rlhf_source_checkpoint_sha256: 72d2bad86d53f087d6f2dbe4c190311f5ba30d7008f37fcf4c45bd7780469038
+  five_codex_teacher_enabled: true
+  five_codex_teacher_auto_connect: true
+  five_codex_teacher_model: gpt-5.6-luna
+  five_codex_teacher_reasoning_effort: xhigh
+  # Grade every immutable finalized entry lifecycle. Zero means unlimited.
+  five_codex_teacher_max_cases_per_run: 0
+  five_codex_teacher_timeout_sec: 120
+  # Causal online feedback: wait up to 30s for the first verified update
+  # before sampling the next MT5 action after a finalized close.
+  five_codex_teacher_online_wait_sec: 120.0
+  five_codex_teacher_max_workers: 2
+  five_codex_teacher_reward_scale: 0.25
+  five_codex_teacher_min_confidence: 0.55
+  five_codex_teacher_max_probability_shift: 0.05
+  five_codex_teacher_learning_rate: 0.0003
+  five_codex_context_similarity_threshold: 0.90
+  five_codex_context_support_floor: 0.50
+  five_codex_global_action_bias_scale: 0.5
+  five_codex_teacher_hypothesis_required: true

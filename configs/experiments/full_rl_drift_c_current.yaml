@@ -1,0 +1,11 @@
+experiment:
+  id: C
+  label: full_rl_current
+  learning_enabled: true
+  direct_rnn_full_rl_enabled: true
+  direct_rnn_adamw_enabled: true
+  direct_rnn_adamw_learning_rate: 0.0005
+  seed: 20260723
+  from_date: "2025.01.07"
+  to_date: "2025.01.08"
+  mt5_model: 1

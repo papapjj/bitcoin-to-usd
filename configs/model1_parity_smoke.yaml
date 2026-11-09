@@ -1,0 +1,17 @@
+# Isolated small policy used only to prove MT5/Python model-1 parity quickly.
+# It is never a production/champion profile.
+extends: he_chuyen_gia_latest_ui_v191.yaml
+
+model:
+  recurrent_core: legacy_rnn
+  hidden_size: 16
+  hidden_layers: 1
+  attention_before_each_hidden: true
+
+observability:
+  enabled: false
+
+environment:
+  backend: mt5
+  strict_model1_parity: true
+  output_wire_decimals: 3

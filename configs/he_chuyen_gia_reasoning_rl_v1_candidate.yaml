@@ -1,0 +1,77 @@
+# Candidate cô lập: GRPO cho reasoning nhiều bước trên Five shared policy.
+# Không sửa config/seed/model V193 gốc. Bridge MT5 vẫn là 137 input / 20 output.
+extends: he_chuyen_gia_latest_ui_v193.yaml
+
+features:
+  ema_fast: 20
+  ema_slow: 60
+
+risk:
+  max_positions: 5
+  enforce_entry_limits: true
+
+orders:
+  timeframe: M1
+  pending_expiry_bars: 30
+  max_holding_bars: 120
+  fixed_sl_atr: 5.0
+  fixed_tp_atr: 10.0
+
+learning:
+  # Verifier-first: chỉ học sau khi path counterfactual 48-M1 đã mature và
+  # action_q_values_r cho HOLD + sáu entry được chốt. Future path tuyệt đối
+  # không đi vào observation, recurrent memory hoặc action request.
+  five_pattern_reward_enabled: true
+  five_lock_non_entry_to_hold: true
+  five_fixed_geometry_enabled: true
+  five_unfilled_pending_timeout_penalty_r: 0.0
+  five_reasoning_rl_enabled: true
+  five_reasoning_steps: 3
+  five_reasoning_group_size: 8
+  five_reasoning_ppo_clip: 0.20
+  five_reasoning_kl_beta: 0.02
+  five_reasoning_entropy_weight: 0.001
+  five_reasoning_loss_weight: 0.25
+  five_reasoning_min_group_std_r: 0.02
+
+  # Giai đoạn 1 chỉ huấn luyện head reasoning. Encoder/LSTM và action policy
+  # không nhận gradient từ objective này; FiveAdam vẫn là writer duy nhất.
+  five_reasoning_encoder_credit_scale: 0.0
+
+  # Candidate telemetry-only. Chỉ tăng sau paired MT5 Model-1 + frozen OOS,
+  # verifier audit và gate KL/entropy/reward-hacking đều đạt.
+  five_reasoning_action_scale: 0.0
+  five_reasoning_action_residual_clip: 0.25
+  # Auto-connect Codex only for this explicit learning candidate. The runner
+  # must pass the executable/model/schema preflight before MT5 starts.
+  # Codex feedback is measured against this immutable reference policy; keep
+  # the capture enabled whenever the teacher is explicitly enabled.
+  five_rlhf_reference_capture_enabled: false
+  five_codex_teacher_enabled: false
+  five_codex_teacher_auto_connect: false
+  five_codex_teacher_model: gpt-5.6-luna
+  five_codex_teacher_reasoning_effort: xhigh
+  five_codex_teacher_online_wait_sec: 120.0
+  five_codex_teacher_max_workers: 2
+  five_codex_teacher_learning_rate: 0.0003
+  # The Codex/Five optimizer has already applied its updates before this
+  # persistence boundary.  Drop only Adam m/v tensors from the OOS candidate
+  # artifact so Windows can persist the learned weights without retaining a
+  # multi-gigabyte continuation-only state. The source seed remains the
+  # continuation checkpoint for the next run with identical Adam moments.
+  five_rlhf_strip_optimizer_state_for_oos: true
+  # A persisted candidate may be used as a new research starting point. This
+  # explicitly reinitializes FiveAdam moments; it is not a continuation claim
+  # and remains research-only until a fresh source checkpoint is promoted.
+  five_rlhf_allow_optimizer_state_reinitialization_for_research: true
+  five_codex_context_similarity_threshold: 0.90
+  five_codex_context_support_floor: 0.50
+  five_codex_global_action_bias_scale: 0.5
+  five_codex_teacher_hypothesis_required: true
+  # Frozen/OOS must execute the same seeded behavior policy that the MT5
+  # learner optimized.  Without this, training samples the legal action
+  # distribution but OOS silently switches to greedy argmax and can collapse
+  # an entry owner to HOLD.  The generator is private and reproducible; it
+  # does not update weights or bypass action/account guards.
+  five_frozen_behavior_sampling_enabled: true
+  five_frozen_behavior_sampling_seed: 20260702

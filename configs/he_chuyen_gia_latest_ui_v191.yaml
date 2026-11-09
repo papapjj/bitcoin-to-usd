@@ -1,0 +1,85 @@
+# Cấu hình train bắt buộc của UI V191.
+#
+# File này chỉ ghi phần khác biệt của kiến trúc mới nhất. Toàn bộ contract dữ
+# liệu, risk, order, lõi nhớ 1 tầng 4096 và context-expert được kế thừa từ profile nền.
+# UI không cho workflow có optimizer writer thay thế đường dẫn này.
+extends: he_chuyen_gia_mot_context_mot_policy.yaml
+
+# Giữ hợp đồng lịch sử của V191; V193 mới chuyển sang năm tác nhân dùng chung.
+he_chuyen_gia:
+  che_do_quyet_dinh: mot_context_mot_chuyen_gia
+  cho_phep_policy_chung_ra_lenh: false
+
+learning:
+  train_entry_probe_enabled: false
+  # Bounded entry-only behavior exploration. Management remains deterministic;
+  # the emitted behavior probability is retained for clipped off-policy credit.
+  direct_rnn_rl_exploration_enabled: true
+  direct_rnn_rl_exploration_rate: 0.10
+  direct_rnn_rl_exploration_min_action_probability: 0.02
+  direct_rnn_rl_exploration_importance_clip: 2.0
+  direct_rnn_rl_entropy_weight: 0.002
+  direct_rnn_rl_entry_preference_horizon_bars: 48
+  direct_rnn_rl_entry_abstraction_horizon_bars: 600
+  # Delayed evidence is re-forwarded with current weights. Executed actions
+  # are clipped/gated off-policy updates; full counterfactual labels no longer
+  # depend on the behavior action chosen many bars earlier.
+  direct_rnn_rl_delayed_reconciliation_enabled: true
+  direct_rnn_rl_delayed_importance_clip: 1.0
+  direct_rnn_rl_delayed_policy_kl_temperature: 0.25
+  direct_rnn_rl_delayed_max_policy_js: 0.50
+  direct_rnn_rl_delayed_min_effective_weight: 0.02
+  direct_rnn_rl_delayed_lifecycle_encoder_credit_scale: 0.0
+  direct_rnn_rl_delayed_counterfactual_encoder_credit_scale: 0.25
+  direct_rnn_rl_delayed_preference_target_mode: counterfactual_consensus_v3
+
+  direct_rnn_state_memory_enabled: false
+  direct_rnn_state_memory_capacity: 32
+  direct_rnn_state_memory_size: 32
+  direct_rnn_state_memory_min_history: 4
+  direct_rnn_state_memory_temperature: 0.35
+  direct_rnn_state_memory_injection_scale: 0.50
+  direct_rnn_state_memory_path_delta_scale: 0.75
+
+  tensor_rule_enabled: false
+  # TensorRule được quyền cộng residual có giới hạn khi rule đã hết UNKNOWN.
+  # UNKNOWN vẫn giữ nguyên quyết định actor, không cưỡng ép một rule 50/50.
+  tensor_rule_authority: residual
+  tensor_rule_sequence_length: 32
+  tensor_rule_input_size: 78
+  tensor_rule_hidden_size: 64
+  tensor_rule_encoder_layers: 2
+  tensor_rule_attention_heads: 4
+  tensor_rule_ffn_size: 128
+  tensor_rule_max_rules: 16
+  tensor_rule_initial_rules: 2
+  tensor_rule_min_valid_length: 16
+  tensor_rule_unknown_membership: 0.55
+  tensor_rule_membership_temperature: 0.04
+  tensor_rule_motif_distance_weight: 0.75
+  tensor_rule_utility_assignment_temperature: 0.15
+  tensor_rule_actor_residual_clip: 0.25
+  tensor_rule_trade_margin_r: 0.10
+  tensor_rule_entry_lcb_gate_enabled: true
+  tensor_rule_effective_batch_size: 64
+  tensor_rule_ready_gradient_norm_budget: 0.50
+  tensor_rule_component_size: 16
+  tensor_rule_action_latent_size: 32
+  tensor_rule_counterfactual_encoder_credit_scale: 0.25
+  tensor_rule_lifecycle_encoder_credit_scale: 0.0
+  tensor_rule_utility_contrastive_margin: 0.20
+  execution_trace_observatory_max_bytes: 67108864
+  # Mot bo nao dung chung: khong tao dau hoc phu hoac mang phu.
+  timing_network_enabled: false
+  timing_network_deceleration_enabled: false
+  timing_network_regime_transition_enabled: false
+  direct_rnn_rl_auxiliary_enabled: false
+  direct_rnn_rl_auxiliary_loss_weight: 0.0
+  direct_rnn_rl_reconstruction_loss_weight: 0.0
+  direct_rnn_rl_counterfactual_representation_enabled: false
+  direct_rnn_rl_counterfactual_representation_loss_weight: 0.0
+  direct_rnn_rl_entry_preference_enabled: false
+  direct_rnn_rl_entry_preference_loss_weight: 0.0
+  direct_rnn_rl_retention_enabled: false
+  input_lifecycle_encoder_learning_enabled: false
+

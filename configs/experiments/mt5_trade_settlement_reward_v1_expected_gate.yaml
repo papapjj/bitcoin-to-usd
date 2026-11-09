@@ -1,0 +1,97 @@
+# Independent-window gate arm: settlement reward plus the causal value surface
+# as an entry boundary.  This remains research-only until every window passes.
+experiment:
+  id: mt5_trade_settlement_reward_v1_expected_gate
+  schema_version: 1
+  source_config: configs/experiments/edge_discovery_v193_value_oos_fixed_rr2_sl250.yaml
+  clone_only: true
+  bridge_input_count: 137
+  bridge_output_count: 20
+  artifact_version: 18
+
+app_overrides:
+  mt5_learning_enabled: true
+
+learning_overrides:
+  input_normalization_mode: raw
+  five_reward_mode: settlement_net_r_v1
+  five_reward_settlement_weight: 1.0
+  five_reward_mark_to_market_weight: 0.10
+  five_reward_settlement_clip_r: 3.0
+  five_reward_competition_weight: 0.0
+  five_reward_terminal_rank_weight: 0.0
+  five_reward_expectancy_wr_v2_enabled: false
+  five_reward_expectancy_shortfall_weight: 0.0
+  five_reward_tail_loss_weight: 0.0
+  five_reward_drawdown_weight: 0.10
+  five_reward_risk_excess_weight: 0.05
+  five_reward_conflict_weight: 0.02
+  five_lifecycle_net_r_credit_enabled: true
+  five_lifecycle_net_r_credit_weight: 1.0
+  five_lifecycle_net_r_credit_clip_r: 2.5
+  five_lifecycle_batch_size: 16
+  five_lifecycle_batch_max_wait: 16
+  five_behavior_uniform_mix: 0.15
+  five_action_decision_mode: expected_value
+  entry_guard_single_position: true
+  context_expectancy_entry_gate_enabled: true
+  context_expectancy_entry_gate_min_support: 12.0
+  context_expectancy_entry_gate_max_lcb: -0.15
+  context_expectancy_entry_gate_allowed_contexts: [CTX_CHUNG]
+  context_expectancy_entry_gate_scope_fallback_enabled: false
+  five_gae_min_feedback_steps: 16
+  five_pattern_unroll: 4
+  five_behavior_entry_probability_floor: 0.005
+  five_flat_entry_mass_floor_start: 0.15
+  five_flat_entry_mass_floor_end: 0.0
+  five_flat_entry_mass_loss_weight: 2.0
+  five_invalid_position_action_no_position_penalty_r: 2.0
+  five_lifecycle_initial_sl_local_loss_weight: 1.0
+  five_failure_replay_enabled: true
+  five_failure_replay_capacity: 256
+  five_failure_replay_items_per_batch: 8
+  five_failure_replay_audit_items: 32
+  five_failure_replay_weight: 0.35
+  five_failure_replay_admit_threshold_r: -0.25
+  five_failure_replay_repair_probability: 0.08
+  five_failure_replay_reopen_probability: 0.14
+  five_failure_replay_repair_streak: 3
+  five_failure_replay_audit_interval: 8
+  # Keep this gate comparable across independent windows: replay sessions are
+  # a separate training arm and must not become hidden extra test windows.
+  five_mt5_failure_replay_sessions_per_run: 0
+  five_pattern_action_quality_reward_scale_r: 0.10
+  five_entropy_start: 0.06
+  five_entropy_edge_gate_enabled: true
+  five_entropy_edge_release_count: 3
+  five_entropy_edge_decay_count: 8
+  five_action_ranking_delta_r: 0.05
+  five_action_ranking_margin_scale: 0.50
+  five_action_ranking_margin_min: 0.05
+  five_action_ranking_margin_max: 1.00
+  five_action_ranking_loss_weight: 2.0
+  five_invalid_cancel_no_pending_penalty_r: 2.0
+  five_unfilled_pending_timeout_penalty_r: 0.25
+  execution_trace_observatory_max_bytes: 33554432
+  execution_trace_observatory_include_recurrent_state: false
+
+label_contract:
+  immutable_counterfactual_path: 48-M1
+  delayed_targets_only: true
+
+gradient_contract:
+  curriculum: edge_discovery_v1_settlement_net_r_expected_gate
+  entry_lifecycle_actor_rows_0_6: trainable
+  timing_gate: disabled
+  conditional_entry_ranking: trainable
+  sole_writer: five_ppo_adam
+
+isolation:
+  sequential_only: true
+  candidate_output_quota_bytes: 12884901888
+  reserve_floor_bytes: 1610612736
+  event_jsonl_max_bytes: 16777216
+  execution_trace_max_bytes: 33554432
+  preserve_source_seed: true
+  preserve_source_model: true
+  preserve_source_config: true

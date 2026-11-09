@@ -1,0 +1,8 @@
+{
+  "command": "PYTHONPATH=src python scripts/benchmark_m1_backend.py --iterations 20",
+  "scope": "local microbenchmark of policy act() only; not an MT5 performance or profitability result",
+  "results": [
+    {"backend": "legacy", "iterations": 20, "mean_ms_per_act": 2.398938300007103},
+    {"backend": "graph", "iterations": 20, "mean_ms_per_act": 15.50382539999191, "neurons": 243, "edges": 8532, "trace_edges_recorded": 128, "trace_edge_budget": 128, "graph_to_legacy_ratio": 6.462786225033802}
+  ]
+}

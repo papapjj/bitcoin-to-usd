@@ -1,0 +1,12 @@
+# Ho so ung vien nghien cuu cho bo nhan cat lo 5 ATR, chot loi 2R.
+# Khong duoc dung voi tệp trong MT5 truoc khi huan luyen lai dau ra va doi
+# chieu bang cung hop dong tren ngay chua thay.
+extends: edge_discovery_v193_value_oos_fixed_rr2_low_disk.yaml
+
+orders:
+  max_holding_bars: 48
+  pending_expiry_bars: 5
+  technical_min_rr: 2.0
+  fixed_sl_atr: 5.0
+  fixed_tp_atr: 10.0
+  entry_offset_atr: 5.0

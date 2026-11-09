@@ -1,0 +1,25 @@
+experiment:
+  id: imitation_mt5_ab_v1
+  schema_version: 1
+  source_config: configs/he_chuyen_gia_latest_ui_v193.yaml
+  clone_only: true
+  bridge_input_count: 137
+  bridge_output_count: 20
+
+# Hồ sơ này chỉ cô lập tác động của seed imitation trong lượt train MT5 ngắn.
+# Baseline và candidate phải dùng cùng file này, cùng cửa sổ/model/seed. Replay
+# Strategy Tester hậu kỳ bị tắt vì nó kéo dài phép thử và làm lẫn tác động của
+# seed với một curriculum khác; PPO/lifecycle train chính vẫn hoạt động.
+learning_overrides:
+  five_mt5_failure_replay_enabled: false
+  five_mt5_failure_replay_sessions_per_run: 0
+
+isolation:
+  sequential_only: true
+  candidate_output_quota_bytes: 4294967296
+  reserve_floor_bytes: 1610612736
+  event_jsonl_max_bytes: 33554432
+  execution_trace_max_bytes: 67108864
+  preserve_source_seed: true
+  preserve_source_model: true
+  preserve_source_config: true

@@ -1,0 +1,44 @@
+# Experiment contract cho topology context-owner + Direct-RNN Full-RL.
+# Không dùng lại source_config của V193 shared để manifest giữ provenance đúng.
+
+experiment:
+  id: reasoning_rl_v1_specialist_candidate
+  schema_version: 1
+  source_config: configs/he_chuyen_gia_reasoning_rl_v1_specialist_candidate.yaml
+  clone_only: true
+  bridge_input_count: 137
+  bridge_output_count: 20
+  artifact_version: 1
+
+app_overrides:
+  mt5_learning_enabled: true
+
+learning_overrides:
+  direct_rnn_adamw_enabled: true
+  direct_rnn_full_rl_enabled: true
+  direct_rnn_rl_batch_size: 8
+  direct_rnn_rl_min_abs_mean_advantage: 0.05
+  direct_rnn_rl_delayed_reconciliation_enabled: false
+  five_codex_teacher_enabled: true
+  five_codex_teacher_auto_connect: true
+  five_codex_teacher_model: gpt-5.6-luna
+  five_codex_teacher_reasoning_effort: xhigh
+  five_codex_teacher_hypothesis_required: true
+  five_rlhf_reference_capture_enabled: true
+  five_rlhf_policy_update_enabled: false
+  five_codex_teacher_max_probability_shift: 0.05
+
+gradient_contract:
+  topology: context_owner_direct_rnn
+  codex_parameter_scope: direct_rnn_full_rl_adamw_v1
+  sole_writer: direct_rnn_full_rl_adamw
+  signed_reward: true
+  hidden_reasoning_logged: false
+
+isolation:
+  sequential_only: true
+  preserve_source_seed: true
+  preserve_source_model: true
+  preserve_source_config: true
+  candidate_only: true
+  promotable: false

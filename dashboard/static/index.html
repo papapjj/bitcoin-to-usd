@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mythos Dual-Champion | Deep-Dive Attention & Reasoning Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- TradingView Lightweight Charts -->
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    <!-- Chart.js for Feature & CoT Radar -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-gray-800 bg-gray-900/80 backdrop-blur px-6 py-3 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-3.5 h-3.5 rounded-full bg-emerald-500 animate-pulse"></div>
+            <h1 class="font-bold text-lg tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+                MYTHOS MUZERO // DUAL-CHAMPION COGNITIVE DASHBOARD
+            </h1>
+            <span class="px-2.5 py-0.5 rounded text-xs font-semibold bg-gray-800 text-cyan-400 border border-cyan-500/30 mono">
+                TCA-240 &bull; KV-CACHE O(1)
+            </span>
+        </div>
+        
+        <div class="flex items-center gap-6 text-sm">
+            <div class="flex items-center gap-2">
+                <span class="text-gray-400">Total Bars:</span>
+                <span id="stat-total-bars" class="mono font-semibold text-emerald-400">Loading...</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-gray-400">Checkpoint:</span>
+                <span id="stat-ckpt" class="px-2 py-0.5 rounded text-xs mono bg-emerald-950 text-emerald-300 border border-emerald-800">
+                    Challenger v193
+                </span>
+            </div>
+            <button onclick="refreshData()" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs font-medium transition border border-gray-700 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Sync Data
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-1 p-6 grid grid-cols-12 gap-6 max-w-[1920px] mx-auto w-full">
+
+        <!-- Left Column: Controls & Candlestick Chart (8 cols) -->
+        <section class="col-span-12 xl:col-span-8 flex flex-col gap-5">
+
+            <!-- Playback & Bar Index Slider Control -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col gap-3 shadow-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs uppercase font-bold tracking-wider text-gray-400">Target Bar Index:</span>
+                        <input id="input-bar-idx" type="number" min="240" value="2500" 
+                            class="bg-gray-950 border border-gray-700 rounded px-2.5 py-1 text-sm mono font-semibold w-24 text-center focus:outline-none focus:border-cyan-500">
+                        <button onclick="jumpToBar()" class="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-xs font-semibold rounded transition">
+                            Inspect Bar
+                        </button>
+                    </div>
+
+                    <!-- Quick Pre-sets -->
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-gray-500">Preset Scenarios:</span>
+                        <button onclick="setPreset(1200)" class="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300">Bull Breakout</button>
+                        <button onclick="setPreset(2500)" class="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300">Chop Consolidation</button>
+                        <button onclick="setPreset(5000)" class="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-rose-400 border border-rose-900/50">Crash Dump ($12k)</button>
+                    </div>
+                </div>
+
+                <!-- Slider -->
+                <div class="flex items-center gap-4">
+                    <input id="slider-bar-idx" type="range" min="240" max="9780" value="2500"
+                        class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-cyan-500">
+                    <span id="slider-val-label" class="text-xs mono text-cyan-400 w-16 text-right">#2500</span>
+                </div>
+            </div>
+
+            <!-- TradingView Candlestick Chart Container -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col gap-3 shadow-xl flex-1 min-h-[520px]">
+                <div class="flex items-center justify-between border-b border-gray-800/80 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-sm tracking-wide text-gray-200">BTC/USD M1 &bull; 240 BARS CONTINUOUS VIEW</span>
+                        <span class="text-xs text-gray-500">(4 Hours Market Context)</span>
+                    </div>
+
+                    <!-- Attention Head Filter Tabs -->
+                    <div class="flex items-center gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800 text-xs">
+                        <button id="head-btn-all" onclick="selectHead('mean')" class="px-2.5 py-1 rounded font-medium bg-cyan-600 text-white">Mean Attention</button>
+                        <button id="head-btn-0" onclick="selectHead(0)" class="px-2.5 py-1 rounded font-medium text-gray-400 hover:text-white">Head 1 (Wicks/Traps)</button>
+                        <button id="head-btn-1" onclick="selectHead(1)" class="px-2.5 py-1 rounded font-medium text-gray-400 hover:text-white">Head 2 (Volume)</button>
+                        <button id="head-btn-2" onclick="selectHead(2)" class="px-2.5 py-1 rounded font-medium text-gray-400 hover:text-white">Head 3 (Velocity)</button>
+                        <button id="head-btn-3" onclick="selectHead(3)" class="px-2.5 py-1 rounded font-medium text-gray-400 hover:text-white">Head 4 (Structure)</button>
+                    </div>
+                </div>
+
+                <!-- Lightweight Charts Canvas -->
+                <div id="chart-container" class="w-full h-[440px] relative rounded-lg overflow-hidden bg-gray-950">
+                    <!-- Overlay Legend -->
+                    <div id="chart-legend" class="absolute top-3 left-3 z-10 bg-gray-900/90 border border-gray-800 rounded p-2 text-xs mono pointer-events-none flex flex-col gap-1">
+                        <div class="text-gray-400 font-semibold">BTC/USD M1</div>
+                        <div id="legend-ohlc" class="text-emerald-400">Loading candles...</div>
+                    </div>
+                </div>
+
+                <!-- 240-Candle Attention Heatmap Ribbon -->
+                <div class="flex flex-col gap-1.5 pt-2 border-t border-gray-800">
+                    <div class="flex items-center justify-between text-xs text-gray-400">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-gray-300">TEMPORAL ATTENTION HEATMAP RIBBON (240 NẾN):</span>
+                            <span id="telemetry-entropy" class="mono text-[11px] text-cyan-400">H: --</span>
+                            <span id="telemetry-recency" class="mono text-[11px] text-amber-400">Recency: --</span>
+                        </div>
+                        <div class="flex items-center gap-3 mono text-[11px]">
+                            <span>t-239 (4h trước)</span>
+                            <div class="w-32 h-2.5 rounded bg-gradient-to-r from-gray-800 via-amber-500 to-red-500 border border-gray-700"></div>
+                            <span class="text-cyan-400 font-bold">t-0 (Hiện tại)</span>
+                        </div>
+                    </div>
+                    <div id="heatmap-ribbon" class="w-full h-4 rounded bg-gray-950 flex overflow-hidden border border-gray-800">
+                        <!-- Bars injected dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top-5 Key Candles Spotlight -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-lg">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center justify-between">
+                    <span>Top-5 Candles Capturing Maximum Bot Attention</span>
+                    <span class="text-[11px] font-normal text-gray-500">Ranking within 240-candle window</span>
+                </h3>
+                <div id="top-candles-container" class="grid grid-cols-5 gap-3">
+                    <!-- Dynamic top candle cards -->
+                    <div class="p-3 rounded-lg bg-gray-950 border border-gray-800 text-center text-xs text-gray-500">Awaiting analysis...</div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Column: Decision, CoT Reasoning Hops & Feature Groups (4 cols) -->
+        <section class="col-span-12 xl:col-span-4 flex flex-col gap-5">
+
+            <!-- TCA Multi-Horizon Projections Card (t+5, t+15, t+30) -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-xl flex flex-col gap-3">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                    <span class="text-xs uppercase font-bold tracking-wider text-gray-400">TCA Multi-Horizon Projections</span>
+                    <span id="tca-consensus-badge" class="text-xs font-bold mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
+                        NEUTRAL
+                    </span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center text-xs mono">
+                    <!-- Horizon t+5 -->
+                    <div class="p-2.5 rounded-lg bg-gray-950 border border-gray-800 flex flex-col gap-0.5">
+                        <span class="text-[11px] text-gray-400 font-semibold">t+5 M1 (5m)</span>
+                        <span id="pred-t5-val" class="text-base font-bold text-gray-200">0.0000</span>
+                        <span id="pred-t5-delta" class="text-[10px] text-gray-500">$0.00</span>
+                    </div>
+                    <!-- Horizon t+15 -->
+                    <div class="p-2.5 rounded-lg bg-gray-950 border border-gray-800 flex flex-col gap-0.5">
+                        <span class="text-[11px] text-gray-400 font-semibold">t+15 M1 (15m)</span>
+                        <span id="pred-t15-val" class="text-base font-bold text-gray-200">0.0000</span>
+                        <span id="pred-t15-delta" class="text-[10px] text-gray-500">$0.00</span>
+                    </div>
+                    <!-- Horizon t+30 -->
+                    <div class="p-2.5 rounded-lg bg-gray-950 border border-gray-800 flex flex-col gap-0.5">
+                        <span class="text-[11px] text-gray-400 font-semibold">t+30 M1 (30m)</span>
+                        <span id="pred-t30-val" class="text-base font-bold text-gray-200">0.0000</span>
+                        <span id="pred-t30-delta" class="text-[10px] text-gray-500">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Executive Action & Consensus Card -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-xl flex flex-col gap-4">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                    <span class="text-xs uppercase font-bold tracking-wider text-gray-400">Champion Consensus</span>
+                    <span id="decision-confidence" class="text-xs font-bold mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+                        Confidence: 0.0%
+                    </span>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <span class="text-xs text-gray-500">Recommended Action:</span>
+                        <span id="decision-action" class="text-2xl font-black tracking-wide mono text-gray-400">HOLD</span>
+                    </div>
+                    <div class="flex flex-col text-right">
+                        <span class="text-xs text-gray-500">PRM Verifier:</span>
+                        <span id="decision-prm" class="text-lg font-bold mono text-emerald-400">+0.00</span>
+                    </div>
+                </div>
+
+                <!-- Bull vs Bear Scores -->
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between text-xs mono">
+                        <span class="text-emerald-400">Bull Score: <span id="score-bull">0.00</span></span>
+                        <span class="text-rose-400">Bear Score: <span id="score-bear">0.00</span></span>
+                    </div>
+                    <div class="w-full h-2.5 rounded-full bg-gray-800 flex overflow-hidden">
+                        <div id="bar-bull" class="bg-emerald-500 h-full transition-all duration-300" style="width: 50%"></div>
+                        <div id="bar-bear" class="bg-rose-500 h-full transition-all duration-300" style="width: 50%"></div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Geometry Head Levels -->
+                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-gray-800/80 text-xs mono">
+                    <div class="p-2 rounded bg-gray-950 border border-gray-800 flex flex-col">
+                        <span class="text-rose-400 font-semibold">Stop Loss (SL)</span>
+                        <span id="geom-sl-price" class="text-sm font-bold text-gray-200">--</span>
+                        <span id="geom-sl-atr" class="text-[10px] text-gray-500">2.50 ATR</span>
+                    </div>
+                    <div class="p-2 rounded bg-gray-950 border border-gray-800 flex flex-col">
+                        <span class="text-emerald-400 font-semibold">Take Profit (TP)</span>
+                        <span id="geom-tp-price" class="text-sm font-bold text-gray-200">--</span>
+                        <span id="geom-tp-atr" class="text-[10px] text-gray-500">5.00 ATR</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chain-of-Thought (CoT) Reasoning Hops -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-xl flex flex-col gap-3">
+                <h3 class="text-xs uppercase font-bold tracking-wider text-gray-400 flex items-center justify-between">
+                    <span>Chain-of-Thought (CoT) Reasoning Flow</span>
+                    <span class="text-cyan-400 font-mono text-[11px]">4 Hops Execution</span>
+                </h3>
+                <div id="cot-hops-container" class="flex flex-col gap-2.5">
+                    <!-- Hops dynamically generated -->
+                </div>
+            </div>
+
+            <!-- 137 Feature Group Distributions (Radar / Bar Chart) -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-xl flex flex-col gap-3 flex-1">
+                <h3 class="text-xs uppercase font-bold tracking-wider text-gray-400">
+                    137 Features Distribution & Activation
+                </h3>
+                <div class="w-full h-56 relative">
+                    <canvas id="features-chart"></canvas>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Frontend Application Logic -->
+    <script>
+        let chart, candleSeries, volumeSeries;
+        let featuresChart;
+        let currentCandles = [];
+        let currentAnalysis = null;
+        let selectedHead = 'mean';
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            initFeaturesChart();
+            fetchStatus();
+            inspectBar(2500);
+
+            // Bind slider
+            const slider = document.getElementById('slider-bar-idx');
+            slider.addEventListener('input', (e) => {
+                document.getElementById('input-bar-idx').value = e.target.value;
+                document.getElementById('slider-val-label').innerText = `#${e.target.value}`;
+            });
+            slider.addEventListener('change', (e) => {
+                inspectBar(parseInt(e.target.value));
+            });
+        });
+
+        function initChart() {
+            const container = document.getElementById('chart-container');
+            chart = LightweightCharts.createChart(container, {
+                width: container.clientWidth,
+                height: 440,
+                layout: {
+                    background: { color: '#030712' },
+                    textColor: '#9ca3af',
+                    fontFamily: "'JetBrains Mono', monospace",
+                },
+                grid: {
+                    vertLines: { color: '#111827' },
+                    horzLines: { color: '#111827' },
+                },
+                timeScale: {
+                    borderColor: '#1f2937',
+                    timeVisible: true,
+                    secondsVisible: false,
+                },
+                rightPriceScale: {
+                    borderColor: '#1f2937',
+                    scaleMargins: { top: 0.1, bottom: 0.25 },
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode.Normal,
+                }
+            });
+
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#10b981',
+                downColor: '#ef4444',
+                borderVisible: false,
+                wickUpColor: '#10b981',
+                wickDownColor: '#ef4444',
+            });
+
+            volumeSeries = chart.addHistogramSeries({
+                priceFormat: { type: 'volume' },
+                priceScaleId: '', // Overlay
+                scaleMargins: { top: 0.8, bottom: 0 },
+            });
+
+            // Resize observer
+            new ResizeObserver(entries => {
+                if (entries.length > 0 && entries[0].contentRect.width > 0) {
+                    chart.applyOptions({ width: entries[0].contentRect.width });
+                }
+            }).observe(container);
+        }
+
+        function initFeaturesChart() {
+            const ctx = document.getElementById('features-chart').getContext('2d');
+            featuresChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Trend & Mom', 'Volatility', 'Positions', 'Account', 'Wyckoff', 'MTF'],
+                    datasets: [{
+                        label: 'Activation Strength',
+                        data: [0.5, 0.4, 0.2, 0.1, 0.7, 0.6],
+                        backgroundColor: 'rgba(6, 182, 212, 0.2)',
+                        borderColor: '#06b6d4',
+                        pointBackgroundColor: '#22d3ee',
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: '#1f2937' },
+                            grid: { color: '#1f2937' },
+                            pointLabels: { color: '#9ca3af', font: { size: 10 } },
+                            ticks: { display: false, maxTicksLimit: 4 }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                document.getElementById('stat-total-bars').innerText = data.total_bars.toLocaleString();
+                document.getElementById('slider-bar-idx').max = data.total_bars - 1;
+            } catch (e) {
+                console.error("Status fetch failed", e);
+            }
+        }
+
+        async function inspectBar(barIdx) {
+            document.getElementById('legend-ohlc').innerText = "Running TCA 240-candle inference...";
+            try {
+                // Fetch candles and analysis in parallel
+                const [candleRes, analysisRes] = await Promise.all([
+                    fetch(`/api/candles?bar_idx=${barIdx}`),
+                    fetch('/api/analyze', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ bar_idx: barIdx })
+                    })
+                ]);
+
+                const candleData = await candleRes.json();
+                currentAnalysis = await analysisRes.json();
+                currentCandles = candleData.candles;
+
+                updateChart(currentCandles, currentAnalysis);
+                updateDecision(currentAnalysis);
+                updateMultiHorizon(currentAnalysis);
+                updateHeatmap(currentAnalysis);
+                updateFeaturesChart(currentAnalysis.feature_groups);
+                updateCoTHops(currentAnalysis.cot_hops);
+
+            } catch (e) {
+                console.error("Inspect error:", e);
+                document.getElementById('legend-ohlc').innerText = "Error loading bar analysis.";
+            }
+        }
+
+        function updateChart(candles, analysis) {
+            const chartData = candles.map(c => ({
+                time: c.time,
+                open: c.open,
+                high: c.high,
+                low: c.low,
+                close: c.close,
+            }));
+
+            const volData = candles.map(c => ({
+                time: c.time,
+                value: c.volume,
+                color: c.close >= c.open ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)',
+            }));
+
+            candleSeries.setData(chartData);
+            volumeSeries.setData(volData);
+            chart.timeScale().fitContent();
+
+            // Last candle legend
+            const last = candles[candles.length - 1];
+            document.getElementById('legend-ohlc').innerHTML = `
+                O: <span class="text-white">${last.open.toFixed(1)}</span>
+                H: <span class="text-white">${last.high.toFixed(1)}</span>
+                L: <span class="text-white">${last.low.toFixed(1)}</span>
+                C: <span class="text-white font-bold">${last.close.toFixed(1)}</span>
+                &bull; ATR: <span class="text-cyan-400">${last.atr.toFixed(1)}</span>
+            `;
+
+            // Markers on last bar for Action
+            const markers = [];
+            if (analysis.action === 'BUY') {
+                markers.push({
+                    time: last.time,
+                    position: 'belowBar',
+                    color: '#10b981',
+                    shape: 'arrowUp',
+                    text: 'BUY SIGNAL',
+                });
+            } else if (analysis.action === 'SELL') {
+                markers.push({
+                    time: last.time,
+                    position: 'aboveBar',
+                    color: '#ef4444',
+                    shape: 'arrowDown',
+                    text: 'SELL SIGNAL',
+                });
+            }
+            candleSeries.setMarkers(markers);
+        }
+
+        function updateDecision(analysis) {
+            const actEl = document.getElementById('decision-action');
+            actEl.innerText = analysis.action;
+            if (analysis.action === 'BUY') {
+                actEl.className = "text-2xl font-black tracking-wide mono text-emerald-400";
+            } else if (analysis.action === 'SELL') {
+                actEl.className = "text-2xl font-black tracking-wide mono text-rose-400";
+            } else {
+                actEl.className = "text-2xl font-black tracking-wide mono text-gray-400";
+            }
+
+            document.getElementById('decision-confidence').innerText = `Confidence: ${(analysis.confidence * 100).toFixed(1)}%`;
+            document.getElementById('decision-prm').innerText = `${analysis.prm_verifier_score > 0 ? '+' : ''}${analysis.prm_verifier_score.toFixed(3)}`;
+            
+            document.getElementById('score-bull').innerText = analysis.bull_score.toFixed(3);
+            document.getElementById('score-bear').innerText = analysis.bear_score.toFixed(3);
+
+            const total = analysis.bull_score + analysis.bear_score + 1e-6;
+            const bullPct = (analysis.bull_score / total) * 100;
+            document.getElementById('bar-bull').style.width = `${bullPct}%`;
+            document.getElementById('bar-bear').style.width = `${100 - bullPct}%`;
+
+            document.getElementById('geom-sl-price').innerText = analysis.suggested_geometry.sl_price.toFixed(1);
+            document.getElementById('geom-tp-price').innerText = analysis.suggested_geometry.tp_price.toFixed(1);
+        }
+
+        function updateMultiHorizon(analysis) {
+            if (!analysis || !analysis.multi_horizon) return;
+            const mh = analysis.multi_horizon;
+            const proj = mh.projections || {};
+
+            const updateCell = (prefix, data) => {
+                const valEl = document.getElementById(`pred-${prefix}-val`);
+                const deltaEl = document.getElementById(`pred-${prefix}-delta`);
+                if (!valEl || !deltaEl || !data) return;
+
+                const ret = data.atr_return ?? 0.0;
+                const delta = data.price_delta ?? 0.0;
+                valEl.innerText = `${ret > 0 ? '+' : ''}${ret.toFixed(4)}`;
+                deltaEl.innerText = `${delta > 0 ? '+' : ''}$${delta.toFixed(2)}`;
+
+                if (ret > 0.05) {
+                    valEl.className = "text-base font-bold mono text-emerald-400";
+                } else if (ret < -0.05) {
+                    valEl.className = "text-base font-bold mono text-rose-400";
+                } else {
+                    valEl.className = "text-base font-bold mono text-gray-300";
+                }
+            };
+
+            updateCell("t5", proj["t+5"]);
+            updateCell("t15", proj["t+15"]);
+            updateCell("t30", proj["t+30"]);
+
+            const badge = document.getElementById("tca-consensus-badge");
+            if (badge) {
+                const dir = mh.consensus_direction || "NEUTRAL";
+                badge.innerText = dir;
+                if (dir === "BULLISH") {
+                    badge.className = "text-xs font-bold mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800";
+                } else if (dir === "BEARISH") {
+                    badge.className = "text-xs font-bold mono px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800";
+                } else {
+                    badge.className = "text-xs font-bold mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800";
+                }
+            }
+        }
+
+        function updateHeatmapTelemetry(analysis) {
+            if (!analysis || !analysis.attention) return;
+            const entEl = document.getElementById("telemetry-entropy");
+            const recEl = document.getElementById("telemetry-recency");
+            if (entEl && analysis.attention.entropy !== undefined) {
+                entEl.innerText = `H: ${Number(analysis.attention.entropy).toFixed(2)}`;
+            }
+            if (recEl && analysis.attention.recency_ratio !== undefined) {
+                recEl.innerText = `Recency: ${Number(analysis.attention.recency_ratio).toFixed(2)}x`;
+            }
+        }
+
+        function updateHeatmap(analysis) {
+            updateHeatmapTelemetry(analysis);
+            const ribbon = document.getElementById('heatmap-ribbon');
+            ribbon.innerHTML = '';
+
+            let weights = analysis.attention.mean_weights_240;
+            if (selectedHead !== 'mean' && analysis.attention.head_weights[selectedHead]) {
+                weights = analysis.attention.head_weights[selectedHead];
+            }
+
+            const maxW = Math.max(...weights, 1e-6);
+
+            weights.forEach((w, idx) => {
+                const norm = Math.min(1.0, w / (maxW * 1.5));
+                const bar = document.createElement('div');
+                bar.className = 'flex-1 h-full transition-all';
+                bar.title = `Bar t-${239 - idx}: Weight ${(w * 100).toFixed(2)}%`;
+                
+                // Color scale from dark blue -> amber -> red
+                if (norm < 0.2) {
+                    bar.style.backgroundColor = '#1f2937';
+                } else if (norm < 0.5) {
+                    bar.style.backgroundColor = '#d97706';
+                } else if (norm < 0.8) {
+                    bar.style.backgroundColor = '#f59e0b';
+                } else {
+                    bar.style.backgroundColor = '#ef4444';
+                }
+                ribbon.appendChild(bar);
+            });
+
+            // Update Top 5 Cards
+            const topContainer = document.getElementById('top-candles-container');
+            topContainer.innerHTML = '';
+            
+            // Sort top 5 indices
+            const indexedWeights = weights.map((val, idx) => ({ idx, val }));
+            indexedWeights.sort((a, b) => b.val - a.val);
+            const top5 = indexedWeights.slice(0, 5);
+
+            top5.forEach((item, rank) => {
+                const candleOffset = 239 - item.idx;
+                const candleData = currentCandles[item.idx] || {};
+                const pct = (item.val * 100).toFixed(2);
+
+                const card = document.createElement('div');
+                card.className = "p-3 rounded-lg bg-gray-950 border border-gray-800 flex flex-col gap-1 text-xs";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between font-bold">
+                        <span class="text-cyan-400">#${rank + 1} &bull; t-${candleOffset}</span>
+                        <span class="text-rose-400 mono">${pct}%</span>
+                    </div>
+                    <div class="text-[11px] text-gray-400 mono">
+                        Price: ${candleData.close ? candleData.close.toFixed(1) : '--'}
+                    </div>
+                    <div class="text-[10px] text-gray-500">
+                        ${candleOffset <= 5 ? 'Recent Wick/Sweep' : (candleOffset > 180 ? 'Macro Anchor' : 'Structure Swing')}
+                    </div>
+                `;
+                topContainer.appendChild(card);
+            });
+        }
+
+        function selectHead(head) {
+            selectedHead = head;
+            ['all', '0', '1', '2', '3'].forEach(id => {
+                const btn = document.getElementById(`head-btn-${id}`);
+                if (btn) btn.className = "px-2.5 py-1 rounded font-medium text-gray-400 hover:text-white";
+            });
+            const activeId = head === 'mean' ? 'all' : head.toString();
+            document.getElementById(`head-btn-${activeId}`).className = "px-2.5 py-1 rounded font-medium bg-cyan-600 text-white";
+
+            if (currentAnalysis) {
+                updateHeatmap(currentAnalysis);
+            }
+        }
+
+        function updateFeaturesChart(features) {
+            if (!featuresChart || !features) return;
+            const values = [
+                features["Trend & Momentum"] || 0.1,
+                features["Volatility & ATR"] || 0.1,
+                features["Position Slots"] || 0.1,
+                features["Account Health"] || 0.1,
+                features["Wyckoff Accumulation/Distribution"] || 0.1,
+                features["Multi-Timeframe"] || 0.1,
+            ];
+            featuresChart.data.datasets[0].data = values;
+            featuresChart.update();
+        }
+
+        function updateCoTHops(hops) {
+            const container = document.getElementById('cot-hops-container');
+            container.innerHTML = '';
+            (hops || []).forEach(h => {
+                const item = document.createElement('div');
+                item.className = "p-2.5 rounded-lg bg-gray-950 border border-gray-800 flex flex-col gap-0.5 text-xs";
+                item.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-gray-200">Hop ${h.hop}: ${h.title}</span>
+                        <span class="text-[10px] text-emerald-400 mono">Verified</span>
+                    </div>
+                    <div class="text-[11px] text-gray-400">${h.focus}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function jumpToBar() {
+            const val = parseInt(document.getElementById('input-bar-idx').value);
+            document.getElementById('slider-bar-idx').value = val;
+            document.getElementById('slider-val-label').innerText = `#${val}`;
+            inspectBar(val);
+        }
+
+        function setPreset(val) {
+            document.getElementById('input-bar-idx').value = val;
+            document.getElementById('slider-bar-idx').value = val;
+            document.getElementById('slider-val-label').innerText = `#${val}`;
+            inspectBar(val);
+        }
+
+        function refreshData() {
+            fetchStatus();
+            jumpToBar();
+        }
+    </script>
+</body>
+</html>

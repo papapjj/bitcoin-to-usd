@@ -1,0 +1,2 @@
+[console_scripts]
+self-growing-trader = self_growing_trader.cli:main

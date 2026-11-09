@@ -1,0 +1,10 @@
+# Runtime smoke-only variant of the specialist candidate.
+# The smaller legacy Direct-RNN is intentional: it makes the bridge/receipt/
+# optimizer contract testable without allocating six 4096-unit contexts.
+extends: he_chuyen_gia_reasoning_rl_v1_specialist_candidate.yaml
+
+model:
+  recurrent_core: legacy_rnn
+  hidden_size: 64
+  hidden_layers: 1
+  attention_before_each_hidden: true

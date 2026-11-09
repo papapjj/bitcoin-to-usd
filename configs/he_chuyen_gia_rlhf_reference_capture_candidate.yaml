@@ -1,0 +1,7 @@
+# Candidate-only MT5 capture profile for the RLHF reference bridge.
+# This profile records causal current/reference logits in the observatory; it
+# does not train PPO, consume a reward model, or authorize promotion.
+extends: he_chuyen_gia_reasoning_rl_v1_candidate.yaml
+
+learning:
+  five_rlhf_reference_capture_enabled: true

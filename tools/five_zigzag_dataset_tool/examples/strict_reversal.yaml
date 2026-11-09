@@ -1,0 +1,24 @@
+name: three_leg_reversal
+history_bars: 256
+future_bars: 128
+min_gap_bars: 32
+legs:
+  - direction: up
+    min_atr: 2.0
+    max_atr: 8.0
+    min_bars: 4
+    max_bars: 60
+  - direction: down
+    min_atr: 1.0
+    max_atr: 5.0
+    min_bars: 3
+    max_bars: 40
+    min_ratio_prev: 0.25
+    max_ratio_prev: 0.80
+  - direction: up
+    min_atr: 1.0
+    max_atr: 6.0
+    min_bars: 3
+    max_bars: 50
+    min_ratio_prev: 0.50
+    max_ratio_prev: 2.50

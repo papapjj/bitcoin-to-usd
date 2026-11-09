@@ -1,0 +1,30 @@
+experiment:
+  id: edge_discovery_v193_value_oos_low_disk
+  schema_version: 5
+  source_config: configs/he_chuyen_gia_latest_ui_v193.yaml
+  clone_only: true
+  bridge_input_count: 137
+  bridge_output_count: 20
+  artifact_version: 18
+
+app_overrides:
+  mt5_learning_enabled: false
+
+learning_overrides:
+  five_behavior_uniform_mix: 0.0
+  five_behavior_entry_probability_floor: 0.0
+  context_expectancy_entry_gate_enabled: false
+  five_reasoning_action_scale: 0.0
+
+isolation:
+  sequential_only: true
+  # This is a single frozen research run. The runner clone plus compact logs
+  # must fit the remaining local disk; the source checkpoint stays protected.
+  candidate_output_quota_bytes: 1073741824
+  reserve_floor_bytes: 536870912
+  event_jsonl_max_bytes: 16777216
+  execution_trace_max_bytes: 33554432
+  execution_trace_observatory_max_bytes: 33554432
+  preserve_source_seed: true
+  preserve_source_model: true
+  preserve_source_config: true

@@ -1,0 +1,7 @@
+extends: model1_parity_smoke.yaml
+
+environment:
+  backend: python_model1
+  model1_tape_path: work/model1_parity/paired_release_final/oracle_full.npz
+  strict_model1_parity: true
+  output_wire_decimals: 3

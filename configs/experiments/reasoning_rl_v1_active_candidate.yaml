@@ -1,0 +1,115 @@
+experiment:
+  id: reasoning_rl_v1_active_candidate
+  schema_version: 1
+  source_config: configs/he_chuyen_gia_reasoning_rl_v1_candidate.yaml
+  clone_only: true
+  bridge_input_count: 137
+  bridge_output_count: 20
+  artifact_version: 1
+
+# This profile is deliberately separate from the telemetry-only Reasoning
+# config.  The candidate runner applies these overrides to the selected
+# reasoning config, so the same base checkpoint can be tested with an actual
+# action residual and an enabled MT5 feedback/optimizer path.
+app_overrides:
+  mt5_learning_enabled: true
+
+learning_overrides:
+  # Keep the causal 3-step head and verifier-first GRPO objective enabled.
+  five_reasoning_rl_enabled: true
+  five_reasoning_steps: 3
+  five_reasoning_group_size: 8
+  five_reasoning_encoder_credit_scale: 0.0
+  # Reasoning head warm-up: zero action residual during initial training
+  # so reasoning learns verification without corrupting seed policy logits.
+  five_reasoning_action_scale: 0.0
+  five_reasoning_action_residual_clip: 0.25
+  five_pattern_reward_enabled: true
+  # Lock Non-Entry Owners (Agents 2, 3, 4) to HOLD so Portfolio Governor
+  # cannot liquidate positions prematurely; let fixed barriers TP/SL govern exits.
+  five_lock_non_entry_to_hold: true
+  five_fixed_geometry_enabled: true
+  context_direction_entry_gate_enabled: false
+  five_unfilled_pending_timeout_penalty_r: 0.0
+  # Allow a persisted OOS candidate with stripped Adam moments to start a
+  # fresh research optimizer. The immutable source remains continuation-safe.
+  five_rlhf_allow_optimizer_state_reinitialization_for_research: true
+  # Keep a research-only atomic recovery point every eight accepted Codex
+  # updates so an external stop cannot discard the latest learned weights.
+  five_rlhf_recovery_snapshot_interval_updates: 8
+  five_pattern_unroll: 4
+  # Minimize uniform random noise on M1 to stop spread bleeding and false entries.
+  five_behavior_uniform_mix: 0.02
+  five_behavior_entry_probability_floor: 0.005
+  # Counterfactual flat snapshots are part of the entry-owner learning
+  # surface: when the immutable 48-M1 path proves an entry would have beaten
+  # HOLD, send that signed missed-edge reward to the actual HOLD owner and
+  # allow the guarded pair-ranking loss to move HOLD toward the verified
+  # entry. Management/governor rows remain excluded by the existing owner
+  # and legal-entry checks.
+  five_action_ranking_bidirectional_enabled: true
+  five_action_ranking_min_qualified_entries: 2
+  five_expectancy_action_veto_enabled: true
+  five_expectancy_action_veto_min_samples: 6
+  five_expectancy_action_veto_min_confidence: 0.20
+  five_expectancy_action_veto_min_lcb_r: -0.15
+  # A negative owner is down-weighted by the learner, not hard-routed to HOLD;
+  # otherwise sparse early losses erase the exploration surface.
+  five_expectancy_action_veto_hold_owner_on_negative: false
+  five_live_action_veto_enabled: true
+  five_live_action_veto_min_samples: 6
+  five_live_action_veto_min_confidence: 0.20
+  five_live_action_veto_min_lcb_r: -0.15
+  five_live_action_veto_hold_owner_on_negative: false
+  # Do not let a negative first window collapse discovery permanently to
+  # HOLD.  Every 16 decisions, preserve one legal entry probe per negative
+  # owner (the least-bad action by the current LCB); the probe is still
+  # recorded and can be vetoed on its own outcome in the next window.
+  five_live_action_veto_probe_enabled: true
+  five_live_action_veto_probe_on_negative_transition: true
+  five_live_action_veto_probe_interval_decisions: 16
+  five_live_owner_exploration_enabled: true
+  five_live_owner_exploration_min_samples: 6
+  five_live_owner_exploration_min_confidence: 0.20
+  five_live_owner_exploration_min_lcb_r: -0.15
+  # After a negative owner transition, retain enough stochastic entry mass to
+  # collect new lifecycle evidence.  This remains below the profile's
+  # five_behavior_uniform_mix and does not bypass veto/provenance guards.
+  five_live_owner_exploration_min_mix: 0.02
+  # Bootstrap probe disabled: do not force artificial market orders into M1 noise.
+  five_live_owner_bootstrap_probe_enabled: false
+  five_live_owner_bootstrap_probe_interval_decisions: 16
+  five_live_owner_bootstrap_probe_max_per_run: 0
+  five_live_owner_bootstrap_probe_force_market: false
+  five_flat_entry_mass_floor_start: 0.15
+  five_flat_entry_mass_floor_end: 0.0
+  five_pattern_action_quality_reward_scale_r: 0.10
+  execution_trace_observatory_include_recurrent_state: false
+
+order_overrides:
+  timeframe: M1
+  pending_expiry_bars: 30
+  max_holding_bars: 120
+  fixed_sl_atr: 5.0
+  fixed_tp_atr: 10.0
+
+label_contract:
+  immutable_counterfactual_path: 48-M1
+  delayed_targets_only: true
+
+gradient_contract:
+  curriculum: reasoning_rl_v1_active
+  reasoning_head: trainable
+  encoder_credit: 0.0
+  action_residual_scale: 0.0
+  sole_writer: five_ppo_adam
+
+isolation:
+  sequential_only: true
+  candidate_output_quota_bytes: 12884901888
+  reserve_floor_bytes: 1610612736
+  event_jsonl_max_bytes: 33554432
+  execution_trace_max_bytes: 67108864
+  preserve_source_seed: true
+  preserve_source_model: true
+  preserve_source_config: true

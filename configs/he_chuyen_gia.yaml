@@ -1,0 +1,76 @@
+# V7 — mot context on dinh -> mot chuyen gia owner -> mot policy doc lap.
+# 0 = khong ap quota so hoc co dinh. Van giu owner isolation, bang chung MT5,
+# invariant graph va gioi han tai nguyen may tinh.
+model:
+  max_modules: 0
+
+supernetwork:
+  m1_backend: direct_rnn
+  max_child_networks: 0
+  max_generation: 0
+  max_children_per_network: 0
+  max_cross_module_edges: 0
+  max_m1_module_edges: 0
+  max_cross_module_recurrent_edges: 0
+  max_cross_module_lateral_edges: 0
+  recurrent_loop_limit: 0
+  max_graph_neurons: 0
+  max_graph_connections: 0
+  max_hidden_neurons_per_module: 0
+  flexible_connection_fanout: 0
+  flexible_peer_module_fanout: 0
+  module_role_budget: 0
+  enable_trial_micro_growth: true
+  micro_growth_max_neurons_per_trial: 0
+  micro_growth_max_modules_per_trial: 0
+
+he_chuyen_gia:
+  bat: true
+  che_do_quyet_dinh: mot_context_mot_chuyen_gia
+  cho_phep_policy_chung_ra_lenh: false
+  cho_phep_tron_policy: false
+  so_chuyen_gia_moi_context: 1
+  regime_timeframe: M15
+  context_history_inputs: 0
+  volatile_subexperts_bat: true
+  volatile_spike_threshold: 0.55
+  volatile_expansion_threshold: 1.15
+  bien_chuyen_ngu_canh: 0.10
+  nguong_vi_the: 0.05
+  nguong_drawdown_phong_thu: 0.65
+  so_lifecycle_toi_thieu_de_hoat_dong: 40
+  so_lifecycle_toi_thieu_de_truong_thanh: 120
+  max_risk_pct_tham_do: 0.005
+  max_open_risk_pct_tham_do: 0.015
+  correlated_exposure_risk_decay: 0.50
+  correlated_exposure_min_risk_pct: 0.001
+  # Role cold-start van trade de hoc; chi dung evidence role+direction
+  # phan cap, tuyet doi khong mask/veto entry hay giam volume.
+  # Readiness chi la telemetry; khong attenuate risk head/volume.
+  role_readiness_min_risk_multiplier: 0.25
+  role_readiness_support_scale: 4.0
+  role_readiness_negative_utility_weight: 0.50
+  context_chua_so_huu: DUNG_QUAN_SAT
+
+learning:
+  # Keep direct-RNN MT5 owners on the same exact-action recovery contract.
+  action_recovery_merge_similarity: 0.75
+
+observability:
+  enabled: true
+  event_path: outputs/quan_sat_chuyen_gia_live.jsonl
+  decision_profile_path: outputs/ho_so_quyet_dinh_chi_tiet.jsonl
+  structural_event_path: outputs/nhat_ky_phat_trien_neuron_lien_ket.jsonl
+  network_development_path: outputs/theo_doi_phat_trien_mang.jsonl
+  decision_sample_every: 1
+  # 0 = không compact/cắt log; dùng để audit toàn bộ quá trình phát triển.
+  max_event_bytes: 0
+  # 0 = ghi/toi uu thi toan bo topology, activity, attribution.
+  max_active_nodes: 0
+  max_active_edges: 0
+  max_state_nodes: 0
+  max_state_edges: 0
+  max_responsible_neurons: 0
+  max_responsible_edges: 0
+  # Moi run duoc tach thu muc; UI tu tim active_run.json.
+  scope_paths_by_run: true

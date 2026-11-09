@@ -1,0 +1,21 @@
+# Candidate-only RLAIF policy-update profile.
+# The reward model is teacher-labelled, never human-RLHF, and never promotable
+# without paired frozen MT5/OOS/LCB evidence.
+extends: he_chuyen_gia_rlhf_reference_capture_candidate.yaml
+
+learning:
+  five_rlhf_reference_capture_enabled: true
+  five_rlhf_policy_update_enabled: true
+  five_rlhf_reward_feedback_mode: rlaif
+  five_rlhf_reward_model_path: outputs/rlhf/rlaif_reward_model_independent_v2_report.json
+  five_rlhf_teacher_checkpoint_sha256: 89ebdd7fa7eb64ef9f151b72285d017b2ee3c6f7268d7b46fd382b4c58cc5342
+  five_rlhf_require_independent_teacher: true
+  five_rlhf_source_checkpoint_sha256: 72d2bad86d53f087d6f2dbe4c190311f5ba30d7008f37fcf4c45bd7780469038
+  # This profile's output is an OOS/forensic candidate, not a continuation
+  # source. Drop FiveAdam moments after MT5 closes to keep artifacts bounded.
+  five_rlhf_strip_optimizer_state_for_oos: true
+  # Three compact candidate artifacts plus observatory/OOS evidence need a
+  # clean 2 GiB floor before the matrix is allowed to start.
+  five_rlhf_min_free_disk_bytes: 2147483648
+  five_rlhf_update_interval_packets: 1
+  five_rlhf_max_updates_per_run: 8

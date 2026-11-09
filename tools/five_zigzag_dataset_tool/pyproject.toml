@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "five-zigzag-dataset-tool"
+version = "0.2.0"
+description = "Causal ZigZag dataset miner with project-native Five environment contract"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "pandas>=2.0", "PyYAML>=6.0"]
+
+[project.scripts]
+five-zigzag = "zigzag_miner.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["zigzag_miner*"]

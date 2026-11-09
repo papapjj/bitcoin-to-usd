@@ -1,0 +1,7 @@
+# Ho so ung vien nghien cuu cho cat lo 5 ATR, chot loi 2R va dong sau 24 nen.
+# Chi dung sau khi tao lai dau ra tren dung bo nhan h24 va kiem tra MT5 doi
+# chung; khong dung voi checkpoint dang gan hop dong 48 nen.
+extends: edge_discovery_v193_value_oos_fixed_rr2_sl500.yaml
+
+orders:
+  max_holding_bars: 24

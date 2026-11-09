@@ -1,0 +1,82 @@
+# ==============================================================================
+# Byte-compiled / optimized / Python
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# ==============================================================================
+# Pytest / Test Artifacts & Tmp Directories
+# ==============================================================================
+.pytest_cache/
+.pytest*
+pytest_temp*
+.tmp*
+_tmp/
+tmp*/
+
+# ==============================================================================
+# Heavy Outputs, Datasets & Runners (~200GB+)
+# ==============================================================================
+outputs/
+work/
+new-chat.rar
+*.rar
+*.zip
+*.7z
+*.tar.gz
+*.tar
+
+# MT5 binaries, instances and sandboxes
+mt5_v2_runner/
+mt5_v2_oos_arm_train/
+mt5_v2_oos_clone/
+mt5_v2_runner_hardlink/
+.mt5_runners/
+
+# Java UI builds
+ui-java/build/
+ui-java/dist/
+
+# ==============================================================================
+# Model Checkpoints & Large Data Files (>50MB)
+# ==============================================================================
+*.pt
+*.pth
+*.bin
+*.onnx
+*.pkl
+*.parquet
+*.h5
+*.hdf5
+*.feather
+
+# ==============================================================================
+# Logs, Lock files & Receipts
+# ==============================================================================
+*.log
+*.lock
+*receipts*
+._tmp*
+.context-expert*
+active_run.json
+temp_run_dir.txt
+test_cand.pkl
+
+
+# Stray redirection files
+/3.0
+/70%
+/70%%
+/85
+
+# IDE & Tool metadata
+.agents/
+.understand-anything/
+.idea/
+.vscode/

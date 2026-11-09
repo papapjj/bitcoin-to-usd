@@ -1,0 +1,7 @@
+numpy>=1.24
+pandas>=2.0
+PyYAML>=6.0
+# Optional, only for Parquet input/output via pandas:
+# pyarrow>=14
+# Optional, only for direct Windows MT5 fetching:
+# MetaTrader5>=5.0

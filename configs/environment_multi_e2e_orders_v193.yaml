@@ -1,0 +1,6 @@
+# Chi dung de kiem thu E2E nhanh mo/khop/dong lenh cua collection nhieu symbol.
+# Khong dung de train production hoac danh gia edge.
+extends: he_chuyen_gia_latest_ui_v193.yaml
+
+risk:
+  enforce_entry_limits: false

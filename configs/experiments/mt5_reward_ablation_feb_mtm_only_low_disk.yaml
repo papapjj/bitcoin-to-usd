@@ -1,0 +1,49 @@
+experiment:
+  id: mt5_reward_ablation_feb_mtm_only
+  schema_version: 1
+  source_config: configs/experiments/edge_discovery_v193_value_oos_fixed_rr2_sl250.yaml
+  clone_only: true
+  bridge_input_count: 137
+  bridge_output_count: 20
+  artifact_version: 18
+
+app_overrides:
+  mt5_learning_enabled: true
+
+learning_overrides:
+  input_normalization_mode: raw
+  five_reward_mode: settlement_net_r_v1
+  five_reward_settlement_weight: 1.0
+  five_reward_mark_to_market_weight: 0.10
+  five_reward_settlement_clip_r: 3.0
+  five_reward_drawdown_weight: 0.0
+  five_reward_risk_excess_weight: 0.0
+  five_reward_conflict_weight: 0.0
+  five_lifecycle_net_r_credit_enabled: true
+  five_lifecycle_net_r_credit_weight: 1.0
+  five_lifecycle_net_r_credit_clip_r: 2.5
+  five_lifecycle_batch_size: 16
+  five_lifecycle_batch_max_wait: 16
+  five_imitation_freeze_updates: 0
+  five_imitation_anchor_updates: 0
+  five_imitation_anchor_weight: 0.0
+  five_expectancy_action_veto_enabled: true
+  five_expectancy_action_veto_min_samples: 12
+  five_expectancy_action_veto_min_confidence: 0.20
+  five_expectancy_action_veto_min_lcb_r: -0.15
+  five_expectancy_action_veto_hold_owner_on_negative: false
+  five_mt5_failure_replay_sessions_per_run: 0
+  five_action_decision_mode: checkpoint
+  entry_guard_single_position: false
+  execution_trace_observatory_max_bytes: 33554432
+  execution_trace_observatory_include_recurrent_state: false
+
+isolation:
+  sequential_only: true
+  candidate_output_quota_bytes: 805306368
+  reserve_floor_bytes: 134217728
+  event_jsonl_max_bytes: 16777216
+  execution_trace_max_bytes: 33554432
+  preserve_source_seed: true
+  preserve_source_model: true
+  preserve_source_config: true

@@ -1,0 +1,16 @@
+# Ho so ung vien reasoning dung cung bo nhan bay lua chon h12/sl500.
+extends: experiments/edge_discovery_v193_value_oos_fixed_rr2_sl500_h12.yaml
+
+learning:
+  five_pattern_reward_enabled: true
+  five_reasoning_rl_enabled: true
+  five_reasoning_steps: 3
+  five_reasoning_group_size: 8
+  five_reasoning_ppo_clip: 0.20
+  five_reasoning_kl_beta: 0.02
+  five_reasoning_entropy_weight: 0.001
+  five_reasoning_loss_weight: 0.25
+  five_reasoning_min_group_std_r: 0.02
+  five_reasoning_encoder_credit_scale: 0.0
+  five_reasoning_action_scale: 0.0
+  five_reasoning_action_residual_clip: 0.25

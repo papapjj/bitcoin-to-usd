@@ -1,0 +1,22 @@
+# Dùng đúng hợp đồng V193 làm nền.  Trước đây hồ sơ này chỉ mang phần ghi chú
+# ``source_config`` nên bộ nạp không kế thừa cấu hình nguồn; các giá trị mặc
+# định 60 nến đã làm lệch nhãn 48 nến/5 nến của bộ bảy lựa chọn.
+extends: ../he_chuyen_gia_latest_ui_v193.yaml
+
+# inputs_pipe trong tap nhan la gia tri thô, cung hop dong voi seed V193.
+# Candidate chi duoc so sanh khi luong offline va MT5 dung cung che do.
+learning:
+  input_normalization_mode: raw
+
+# The seven-choice labels for this candidate use the same fixed geometry as
+# the live decoder.  Keeping reward at 2R/1R makes the break-even win rate 1/3
+# before spread, so a 50% win rate is not structurally loss-making.
+orders:
+  # Bộ nhãn đóng phần còn lại ở cuối 48 nến; lệnh chờ hết hạn sau 5 nến.
+  max_holding_bars: 48
+  pending_expiry_bars: 5
+  technical_min_rr: 2.0
+  fixed_sl_atr: 1.5
+  fixed_tp_atr: 3.0
+  entry_offset_atr: 5.0
+  max_spread_cost_r: 0.50

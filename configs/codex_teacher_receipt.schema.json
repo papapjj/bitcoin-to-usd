@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "packet_sha256": {"type": "string"},
+    "trace_id": {"type": "string"},
+    "position_ticket": {"type": "string"},
+    "rubric_version": {"type": "string"},
+    "rationale": {"type": "string", "minLength": 12, "maxLength": 800},
+    "decision_quality": {"type": "number", "minimum": 0, "maximum": 1},
+    "risk_quality": {"type": "number", "minimum": 0, "maximum": 1},
+    "timing_quality": {"type": "number", "minimum": 0, "maximum": 1},
+    "execution_quality": {"type": "number", "minimum": 0, "maximum": 1},
+    "teacher_reward": {"type": "number", "minimum": -1, "maximum": 1},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "hypothesis": {"type": "string", "minLength": 12, "maxLength": 800},
+    "prediction": {"type": "string", "minLength": 12, "maxLength": 500},
+    "experiment": {"type": "string", "minLength": 12, "maxLength": 500},
+    "predicted_reward_sign": {"type": "integer", "enum": [-1, 0, 1]},
+    "verification_status": {"type": "string", "enum": ["confirmed", "rejected", "inconclusive"]},
+    "verification_observed_reward": {"type": "number"},
+    "verification_evidence": {"type": "string", "minLength": 12, "maxLength": 800},
+    "intervention_multiplier": {"type": "number", "minimum": 0.5, "maximum": 1.5},
+    "intervention_target_action": {"type": "integer", "minimum": 0, "maximum": 11},
+    "account_impact": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"type": "integer", "const": 1},
+        "status": {"type": "string", "enum": ["confirmed", "partial", "inconclusive"]},
+        "verification_ready": {"type": "boolean"},
+        "evidence_scope": {"type": "string", "minLength": 12, "maxLength": 160},
+        "observed_net_pnl": {"type": ["number", "null"]},
+        "observed_realized_r": {"type": ["number", "null"]},
+        "balance_delta": {"type": ["number", "null"]},
+        "equity_delta": {"type": ["number", "null"]},
+        "cashflow_delta": {"type": ["number", "null"]},
+        "cashflow_deal_ticket": {"type": ["string", "null"]},
+        "account_mark_attribution": {"type": "string", "minLength": 1, "maxLength": 80},
+        "counterfactual_status": {"type": "string", "enum": ["validated", "not_available", "inconclusive"]},
+        "counterfactual_hold_r": {"type": ["number", "null"]},
+        "counterfactual_delta_r": {"type": ["number", "null"]},
+        "counterfactual_horizon_bars": {"type": ["integer", "null"]},
+        "verification_evidence": {"type": "string", "minLength": 12, "maxLength": 800}
+      },
+      "required": [
+        "schema_version", "status", "verification_ready", "evidence_scope",
+        "observed_net_pnl", "observed_realized_r", "balance_delta", "equity_delta",
+        "cashflow_delta", "cashflow_deal_ticket",
+        "account_mark_attribution",
+        "counterfactual_status", "counterfactual_hold_r", "counterfactual_delta_r",
+        "counterfactual_horizon_bars", "verification_evidence"
+      ]
+    }
+  },
+  "required": [
+    "packet_sha256", "trace_id", "position_ticket", "rubric_version",
+    "rationale", "decision_quality", "risk_quality", "timing_quality",
+    "execution_quality", "teacher_reward", "confidence",
+    "hypothesis", "prediction", "experiment", "predicted_reward_sign",
+    "verification_status", "verification_observed_reward", "verification_evidence",
+    "intervention_multiplier", "intervention_target_action", "account_impact"
+  ],
+  "additionalProperties": false
+}

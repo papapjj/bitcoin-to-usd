@@ -1,0 +1,55 @@
+# Candidate research-only cho topology context-owner.
+#
+# Khác với V193 shared policy, profile này tạo một Direct-RNN policy riêng cho
+# từng context. Codex teacher dùng chung queue Full-RL AdamW với lifecycle
+# post-close; không dùng legacy action-bias writer trong profile này.
+extends: he_chuyen_gia_latest_ui_v191.yaml
+
+he_chuyen_gia:
+  che_do_quyet_dinh: mot_context_mot_chuyen_gia
+  cho_phep_policy_chung_ra_lenh: false
+  entry_style_specialists_bat: false
+  position_management_specialist_bat: false
+  volatile_subexperts_bat: false
+
+learning:
+  # Actual recurrent/action-head writer. The Codex branch is opt-in through
+  # this existing flag and shares the same delayed-credit AdamW queue as
+  # lifecycle rewards, so there is one writer and one auditable parameter
+  # scope.
+  direct_rnn_adamw_enabled: true
+  direct_rnn_full_rl_enabled: true
+  direct_rnn_rl_batch_size: 8
+  direct_rnn_rl_min_abs_mean_advantage: 0.05
+  direct_rnn_rl_delayed_reconciliation_enabled: false
+  direct_rnn_rl_exploration_enabled: true
+  direct_rnn_rl_exploration_rate: 0.10
+  direct_rnn_rl_exploration_min_action_probability: 0.02
+  direct_rnn_rl_entropy_weight: 0.002
+
+  # Codex teacher remains candidate-only and fail-closed on provenance,
+  # frozen reference, hypothesis and account-impact validation.
+  five_codex_teacher_enabled: true
+  five_codex_teacher_auto_connect: true
+  five_codex_teacher_model: gpt-5.6-luna
+  five_codex_teacher_reasoning_effort: xhigh
+  five_codex_teacher_hypothesis_required: true
+  five_rlhf_reference_capture_enabled: true
+  # The specialist Codex path is the teacher receipt -> Direct-RNN queue;
+  # the separate generic RLHF reward-model worker is intentionally disabled.
+  five_rlhf_policy_update_enabled: false
+  five_codex_teacher_max_workers: 2
+  five_codex_teacher_online_wait_sec: 120.0
+  five_codex_teacher_learning_rate: 0.0003
+  five_codex_teacher_max_probability_shift: 0.05
+
+  # Preserve bounded post-close evidence and candidate-only persistence.
+  five_pattern_reward_enabled: true
+  five_rlhf_strip_optimizer_state_for_oos: false
+  five_rlhf_allow_optimizer_state_reinitialization_for_research: true
+
+orders:
+  timeframe: M15
+  fixed_sl_atr: 3.0
+  fixed_tp_atr: 6.0
+  max_holding_bars: 48

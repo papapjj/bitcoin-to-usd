@@ -1,0 +1,560 @@
+# Profile production: context owner ke thua v13 lam entry generalist. Moi
+# market context tao lazy ba policy MARKET/LIMIT/STOP va mot position manager
+# doc lap, warm-start tu dung context owner. Rieng volatile subtype con giu
+# broad CTX_VOLATILE v13 lam parent-generalist challenger. Selector chon dung
+# mot trace, khong blend; HOLD/management khong duoc phu quyet entry.
+## Reference MT5 export bao phu 2025-2026; dung file nay cho feature parity
+## thay vi BTCUSDM1.csv cu chi ket thuc nam 2023.
+data:
+  csv_path: C:\Users\Admin\Desktop\BTCUSDm.csv
+
+# Direct-RNN architecture for every newly created expert.  Change only
+# ``hidden_layers`` to test depth: the regularization schedules below are
+# broadcast/truncated automatically to exactly this many blocks.  A resume
+# checkpoint with a different width/depth is rejected; use --fresh-system or a
+# distinct --output so trained tensors are never silently resized.
+model:
+  # Loi hoi tiep theo kien truc OpenAI Five duoc cong bo nam 2019:
+  # mot tang LSTM duy nhat, rong 4096 phan tu nho.
+  recurrent_core: openai_five_lstm_v1
+  hidden_size: 4096
+  hidden_layers: 1
+  # Loi Five khong chen attention cua kien truc cu truoc tang LSTM.
+  attention_before_each_hidden: false
+
+he_chuyen_gia:
+  bat: true
+  che_do_quyet_dinh: nam_tac_nhan_dung_chung
+  so_tac_nhan: 5
+  so_chieu_nhan_dang_tac_nhan: 5
+  cho_phep_policy_chung_ra_lenh: true
+  cho_phep_tron_policy: false
+  so_chuyen_gia_moi_context: 1
+  # Regime owner is resolved immediately from the latest closed M15 bar.
+  # There is no M1 candidate countdown or volatile fast-path.
+  regime_timeframe: M15
+  # Python-local causal tokens t-1/t-2. EA/CSV remains exactly 137 features;
+  # Direct-RNN receives the two values only after that immutable wire vector.
+  context_history_inputs: 0
+  # V153 candidate: local causal quality interactions are ordinary Direct-RNN
+  # inputs, including causal long/short structural-SL anchor evidence. They
+  # do not add fixed BUY/SELL points or force an SL; management cannot see
+  # them. Raw unstable inputs are reduced to 20%; the repaired H1 block keeps
+  # a temporary 35% direct drive while its new distribution earns evidence.
+  entry_feature_enrichment_mode: legacy
+  entry_feature_quarantine_scale: 1.0
+  entry_feature_h1_direct_scale: 1.0
+  bien_chuyen_ngu_canh: 0.10
+  nguong_vi_the: 0.6
+  nguong_drawdown_phong_thu: 0.65
+  # Cold specialists remain trainable, but structural state needs repeated
+  # lifecycle evidence before it can influence a promoted artifact.
+  so_lifecycle_toi_thieu_de_hoat_dong: 25
+  so_lifecycle_toi_thieu_de_truong_thanh: 80
+  max_risk_pct_tham_do: 0.005
+  max_open_risk_pct_tham_do: 0.015
+  # Exposure chi anh huong selector evidence/score; khong sua risk head,
+  # khong gioi han volume va khong veto entry.
+  correlated_exposure_risk_decay: 0.50
+  correlated_exposure_min_risk_pct: 0.001
+  # V31: role moi van duoc vao lenh voi nguyen risk head cua policy. Loss cua
+  # cung role+direction duoc back-off qua context va microstate.
+  role_readiness_min_risk_multiplier: 0.25
+  role_readiness_support_scale: 4.0
+  role_readiness_negative_utility_weight: 0.50
+  # Selector anti-overfit: cold specialists remain probeable only when no
+  # supported route exists; otherwise confidence alone cannot dominate.
+  selector_cold_start_penalty: 0.60
+  selector_cold_start_support: 8
+  selector_cold_start_max_per_run: 2
+  selector_pending_entry_max_age_decisions: 4
+  selector_inflight_penalty: 0.35
+  selector_exposure_penalty: 0.35
+  context_chua_so_huu: DUNG_QUAN_SAT
+  # Một context chỉ có một policy owner. Role specialist còn trong artifact
+  # cũ sẽ bị migration xóa, không chỉ bị dừng tạo mới.
+  entry_style_specialists_bat: false
+  position_management_specialist_bat: false
+  # Không chặn entry. Chỉ giữ lệnh cùng chiều khi trend mạnh còn ổn định;
+  # close được mở lại khi gần TP, lỗ khẩn cấp hoặc đã giveback sau MFE.
+  bao_ve_thoat_som_trend_manh: true
+  trend_manh_giveback_r_de_thoat: 0.35
+  trend_manh_bars_sau_mfe_de_thoat: 2
+  # Mo exit som o -0.35R de cat sai entry truoc SL; khong chan entry/volume.
+  trend_manh_lo_r_cho_phep_thoat: -0.1
+  bao_ve_quan_ly_khi_doi_context: true
+  quan_ly_doi_context_min_profit_r: 0.10
+  quan_ly_doi_context_lo_r_khan_cap: -0.1
+  # Direction priors are disabled in this candidate. A context switch is the
+  # direct M15 detector result; no pre-switch candidate can rewrite action.
+  context_direction_prior_strength: 0.0
+  candidate_transition_direction_prior_bat: false
+  volatile_timing_direction_prior_bat: false
+  stable_context_direction_prior_during_transition_bat: false
+  # Only after the TimingNet has enough causal deceleration labels, a high
+  # probability in a transition changes LIMIT -> same-side STOP and caps risk.
+  # It never flips direction or turns an entry into HOLD.
+  timing_deceleration_response_bat: false
+  timing_deceleration_entry_threshold: 0.5
+  timing_deceleration_min_updates: 24
+  timing_deceleration_limit_to_stop_bat: true
+  timing_deceleration_min_risk_multiplier: 0.35
+  # Một entry mới chỉ bị HOLD khi TimingNet chung dự báo context ổn định sẽ
+  # đổi trong horizon gần nhất, và chính dự báo high-confidence đó đã được
+  # kiểm chứng bằng nhãn trễ. Không dùng candidate label nhấp nháy làm gate.
+  timing_regime_transition_entry_block_bat: true
+  timing_regime_transition_entry_threshold: 0.78
+  timing_regime_transition_min_updates: 192
+  timing_regime_transition_min_calibration_samples: 128
+  timing_regime_transition_min_high_confidence_samples: 12
+  timing_regime_transition_min_precision: 0.75
+  timing_regime_transition_max_brier: 0.20
+  # Volatile dùng timing direction từ q>=0.10 như score mềm, không làm gate.
+  volatile_timing_direction_min_quality: 0.10
+  # Chỉ giữ volatile khi biến động cao nhưng hướng gần trung tính;
+  # trend yếu dương/âm đi vào TANG_YEU/GIAM_YEU.
+  volatile_max_directional_strength: 0.18
+  # V13 gốc vẫn là seed bất biến. Candidate khi load tách owner VOLATILE broad
+  # thành ba policy độc lập để spike/expansion/chop không ghi đè lẫn nhau.
+  volatile_subexperts_bat: false
+  volatile_spike_threshold: 0.55
+  volatile_expansion_threshold: 1.15
+
+features:
+  atr_period: 30
+  ema_fast: 50
+  ema_slow: 200
+  range_window: 60
+  regime_window: 90
+  atr_percentile_window: 240
+  max_spread_atr: 8.0
+  shock_range_atr: 12.0
+  wyckoff_range_window: 120
+  wyckoff_volume_short_window: 20
+  wyckoff_volume_long_window: 60
+  wyckoff_event_horizon: 60
+  # Candidate-only higher-timeframe contract: MTF EMA/gap uses its own ATR;
+  # MTF volatility is (ATR_tf-ATR_m1)/(ATR_tf+ATR_m1), never a clipped ratio.
+  # Protected v13 retains legacy_m1_atr_v1 in its separate config/artifact.
+  mtf_scaling_mode: native_tf_atr_v2
+
+risk:
+  # Candidate-only exposure envelope. The protected seed artifact keeps its
+  # original runtime contract; this profile does not allow an unproven
+  # negative regime to spend the full legacy 2% per lifecycle.
+  initial_equity: 10000000000
+  min_risk_pct: 0.001
+  max_risk_pct: 0.005
+  max_open_risk_pct: 0.015
+  max_positions: 5
+  ruin_equity_pct: 0.50
+  enforce_entry_limits: true
+  fixed_risk_pct: 0.0
+
+environment:
+  offline_preflight: true
+
+orders:
+  max_holding_bars: 0
+  # Entry luôn nhận final R. Chỉ policy close mới nhận credit sau 12 nến M1
+  # theo chênh lệch giữa close thực tế và giữ lệnh thêm horizon này.
+  exit_counterfactual_horizon_bars: 12
+  min_daily_trades: 0
+  max_daily_trades: 0
+  technical_min_rr: 2
+  # Geometry cố định ở thời điểm entry; không output nào của policy được phép
+  # sửa SL/TP, kể cả sau khi position đã filled.
+  fixed_sl_atr: 5.0
+  fixed_tp_atr: 10.0
+
+continuous:
+  # Role specialists song ben trong facade context-expert, khong phai legacy
+  # continuous registry. Credit theo decision policy va market context.
+  enabled: true
+  suppress_flat_idle_starvation: true
+
+supernetwork:
+  m1_backend: direct_rnn
+  max_graph_neurons: 500000
+  max_graph_connections: 100000000
+
+learning:
+  seed: 20260702
+  require_real_ticks_for_promotion: true
+  require_real_tick_evidence_for_promotion: true
+  frozen_oos: true
+  live_curiosity_mode: evidence_only
+  # V13 no-entry-blocking profile: policy output đi thẳng tới execution
+  # legality; không recovery rerank, soft-penalty hoặc veto entry về HOLD.
+  action_recovery_enabled: false
+  # Full-RL AdamW là writer duy nhất của policy. Action-recovery cũ không được
+  # phép học shadow/lifecycle song song, vì nó tạo một policy evidence store
+  # độc lập không nằm trong batch loss.
+  action_recovery_learning_enabled: false
+  action_recovery_min_support: 3.0
+  # Chỉ thay entry khi LCB cục bộ đã vượt đúng mục tiêu expectancy.
+  action_recovery_min_lcb: 0.10
+  # Context-specific action evidence is consolidated at load/replay time so
+  # volatile expert support does not remain split across many sparse cells.
+  action_recovery_merge_similarity: 0.75
+  action_recovery_shadow_weight: 0.70
+  action_recovery_max_cells_per_action: 256
+  # Giữ field để đọc artifact cũ nhưng runtime profile cấm entry veto.
+  action_recovery_negative_veto_enabled: false
+  # Tất cả mask học được/contextual đều tắt cho candidate này. LCB,
+  # expectancy và direction vẫn được ghi telemetry/soft delta nhưng không
+  # được loại action trước argmax hoặc ở bridge.
+  context_direction_entry_gate_enabled: false
+  context_direction_side_entry_gate_enabled: false
+  context_expectancy_entry_gate_enabled: false
+  context_expectancy_entry_gate_min_support: 12.0
+  context_expectancy_entry_gate_max_lcb: -0.15
+  context_expectancy_entry_gate_allowed_contexts: []
+  context_expectancy_entry_gate_scope_fallback_enabled: false
+  action_recovery_negative_veto_min_real_support: 2.0
+  action_recovery_negative_veto_lcb: 0.0
+  # Không chặn entry kế tiếp chỉ vì đã có position/pending order; execution
+  # capacity của MT5 vẫn là giới hạn kỹ thuật bắt buộc.
+  entry_guard_single_position: false
+  entry_loss_guard_enabled: false
+  entry_loss_guard_min_closed: 3
+  entry_loss_guard_max_closed_loss_r: 0.30
+  entry_loss_guard_consecutive_losses: 3
+  train_entry_probe_enabled: true
+  train_entry_probe_after_decisions: 10
+  train_entry_probe_interval_decisions: 10
+  # Probe chỉ thu thập cold-start evidence; không được chiếm toàn bộ report.
+  train_entry_probe_max_per_day: 2
+  train_entry_probe_max_per_run: 2
+  # Chỉ probe theo hướng được timing/context prior xác nhận; không luân phiên
+  # BUY/SELL mù vì sẽ làm bẩn bằng chứng cục bộ của chuyên gia.
+  train_entry_probe_min_direction_quality: 0.75
+  # Không dùng runtime performance mask. Giới hạn broker/protocol/EA bắt buộc
+  # vẫn giữ để không phát lệnh trạng thái không hợp lệ.
+  runtime_fitness_guard_enabled: false
+  runtime_fitness_rolling_window: 50
+  runtime_fitness_min_closed: 20
+  runtime_fitness_min_score: -0.30
+  runtime_fitness_max_immediate_exit_ratio: 0.60
+  runtime_fitness_max_daily_loss_r: 3.0
+  runtime_fitness_max_run_loss_r: 8.0
+  runtime_fitness_max_daily_trades: 300
+  runtime_fitness_max_drawdown_pct: 12.0
+  # V148 full-update candidate: every settled lifecycle may update the
+  # context owner. Gradient clipping, normalization and OOS gates remain the
+  # safety boundary; this is not applied to the protected v13 artifact.
+  mt5_online_update_scale: 1.0
+  # Opt-in bounded input experiment. Legacy v13 stays raw; normalized runs
+  # must write a separate candidate and pass paired frozen OOS gates.
+  # V152: causal, parameter-free feature-family normalization.  It keeps
+  # ATR market scores local while log-compressing stateful position/account/
+  # execution tails; seed v13 remains raw in its separate protected artifact.
+  # V155 candidate only: corrects the actual EA chop range [0,1], maps
+  # structural ATR distances with asinh (rather than a flat tail clip), and
+  # centers MTF volatility ratios at 1.0. The protected v13 remains raw.
+  input_normalization_mode: structure_aware_v4
+  # Hard semantic contract for the candidate only. BUY/SELL/HOLD sees only
+  # market + timing/Wyckoff; position/execution is isolated to management;
+  # account state controls risk budget and a safety-only HOLD veto.
+  semantic_input_routing_mode: legacy
+  # Disabled: side-specific masking can remove the policy winner then let
+  # argmax fall through to the opposite side, creating accidental hedges.
+  # Broker legality/capacity checks remain mandatory.
+  semantic_duplicate_entry_block_enabled: false
+  semantic_risk_base_fraction: 0.50
+  semantic_risk_min_fraction: 0.30
+  semantic_risk_drawdown_soft_limit: 0.06
+  semantic_risk_drawdown_hard_limit: 0.12
+  # ``open_risk_ratio`` is aggregate money-at-initial-SL divided by equity.
+  # Position count is separate and never acts as an implicit entry quota.
+  semantic_risk_open_risk_soft_limit: 0.60
+  semantic_risk_open_risk_hard_limit: 0.90
+  # Candidate regularization is explicit. ``enabled`` alone is not enough:
+  # ``none`` is a deliberate no-op for legacy artifacts, so the candidate
+  # must select a real mode. The protected seed artifact remains unchanged.
+  hidden_normalization_mode: layernorm_v1
+  hidden_normalization_target_rms: 1.0
+  hidden_normalization_clip: 3.0
+  hidden_normalization_eps: 1.0e-5
+  # This profile is the isolated candidate profile. The protected seed is an
+  # artifact, not this mutable YAML; candidate runs must write a separate
+  # output and never overwrite that seed. The six entries map to the six
+  # recurrent hidden blocks.
+  hidden_normalization_enabled: true
+  # One switch per current hidden layer. All blocks must remain enabled.
+  hidden_normalization_layers: [true, true, true, true]
+  # Every Full-RL MT5 forward samples deterministic dropout in the cached
+  # entry surface. Frozen/OOS keeps the same sequence and only disables
+  # writers, so paired drift evidence is not confounded by a different model.
+  hidden_dropout_enabled: true
+  # Conservative rates keep the six-block recurrent path trainable while
+  # avoiding the 30% shock that was previously applied without normalization.
+  # One rate per current hidden layer. A shorter list repeats its last rate
+  # when model.hidden_layers is increased.
+  hidden_dropout_rates: [0.10, 0.10, 0.10, 0.10]
+  hidden_dropout_seed: 20260702
+  hidden_dropout_train_only: true
+  output_normalization_mode: rms_v1
+  output_normalization_target_rms: 0.70
+  output_normalization_clip: 3.0
+  # Action rows vẫn bounded. Raw parameter logits chỉ còn dùng cho risk và
+  # pending offset; rows SL/RR compatibility không được decode hay học.
+  execution_parameter_activation_mode: raw_logits_v2
+  # Long-term plasticity is normalized even while forward features stay raw;
+  # this prevents feature tails and negative reward from amplifying weights.
+  plasticity_input_normalization_mode: groupwise_v2
+  plasticity_update_clip: 0.25
+  # Superseded local encoder credit remains off. The full-RL lifecycle batch
+  # below owns w_in/w_rec/w_out and every configured hidden block.
+  input_lifecycle_encoder_learning_enabled: false
+  input_lifecycle_encoder_batch_size: 6
+  input_lifecycle_encoder_min_abs_advantage: 0.15
+  input_lifecycle_encoder_min_sign_coherence: 0.55
+  # One optimizer owns every normal Direct-RNN credit path; there is no
+  # manual w += lr * delta update.  AdamW starts at the cosine peak and
+  # decays smoothly to 20% over 256 optimizer steps before restarting.
+  direct_rnn_adamw_enabled: true
+  # V185: online lifecycle batches showed repeated >90% gradient clipping at
+  # 5e-4. Keep the protected seed unchanged and use the conservative rate only
+  # for new candidate training.
+  direct_rnn_adamw_learning_rate: 0.0001
+  direct_rnn_adamw_weight_decay: 0.001
+  direct_rnn_adam_beta1: 0.90
+  direct_rnn_adam_beta2: 0.999
+  direct_rnn_adam_epsilon: 0.00000001
+  direct_rnn_gradient_clip: 1.0
+  direct_rnn_cosine_min_factor: 0.20
+  direct_rnn_cosine_cycle_steps: 256
+    # Verified MT5 lifecycle -> policy/value/entropy loss -> full depth
+    # backpropagation -> one AdamW step. In this mode AdamW is the only
+    # writer of Direct-RNN, value head and module gate; legacy Hebbian,
+    # fitness/causal/curiosity credit, action head, risk gate and parameter
+    # replacement overlays are runtime-disabled, not merely configured low.
+    # The protected v13 artifact does not enable these fields.
+  direct_rnn_full_rl_enabled: false
+  # V190 state-alias memory is opt-in. Keep the production profile behavior
+  # unchanged; the isolated candidate profile below enables it explicitly.
+  direct_rnn_state_memory_enabled: false
+  direct_rnn_state_memory_capacity: 32
+  direct_rnn_state_memory_size: 32
+  direct_rnn_state_memory_min_history: 4
+  direct_rnn_state_memory_temperature: 1.0
+  direct_rnn_state_memory_injection_scale: 0.25
+  direct_rnn_state_memory_path_delta_scale: 0.75
+  direct_rnn_rl_batch_size: 8
+  direct_rnn_rl_min_abs_mean_advantage: 0.05
+  direct_rnn_rl_value_loss_weight: 0.25
+  # Argmax behavior dùng objective advantage-weighted xác định; entropy không
+  # được dùng để đẩy một policy không hề sample ngẫu nhiên.
+  direct_rnn_rl_entropy_weight: 0.01
+  # V187: after 48 closed M1 bars, replay HOLD plus six executable entry
+  # choices for every selected HOLD or entry decision on its immutable quote/
+  # SL/RR/offset path. This prevents a learned HOLD region from removing
+  # itself from supervision. CSV provenance distinguishes flat_v1 from entry_marginal_v2;
+  # CE moves only logits [0..6] inside the same Full-RL AdamW batch and is
+  # never a runtime gate, mask, risk writer or account-PnL target.
+  direct_rnn_rl_entry_preference_enabled: false
+  # V179 baseline.  V182 tested 0.50 on the identical seed/window but made
+  # MT5 PF/WR/net profit worse, so 0.50 is rejected rather than retained as a
+  # latent default.  This stays a training-only loss in the shared batch.
+  direct_rnn_rl_entry_preference_loss_weight: 0.0
+  direct_rnn_rl_timing_first_enabled: false
+  direct_rnn_rl_timing_gate_loss_weight: 0.0
+  direct_rnn_rl_entry_preference_temperature: 0.50
+  direct_rnn_rl_entry_preference_horizon_bars: 48
+  direct_rnn_rl_entry_abstraction_horizon_bars: 48
+  direct_rnn_rl_entry_preference_include_hold_snapshots: true
+  # Candidate learns action-local path quality (direction + timing + geometry
+  # + spread cost), not policy management/account PnL. Protected artifacts
+  # without this field retain terminal_r_v1 through migration defaults.
+  direct_rnn_rl_entry_utility_mode: path_quality_v1
+  # V186 retention candidate: remove the structural 6-entry-vs-1-HOLD class
+  # imbalance without changing the 20-output bridge. First learn/decide
+  # TRADE versus HOLD from the selected action's settled path utility (or mean
+  # legal-entry utility for HOLD samples), then rank action conditional on
+  # TRADE. This removes the old hindsight-max label that told a losing entry
+  # to TRADE because another unselected alternative later won. Equal logits
+  # therefore mean P(TRADE)=0.5, not 6/7.
+  direct_rnn_rl_trade_hold_separation_enabled: true
+  direct_rnn_rl_trade_hold_margin_r: 0.10
+  direct_rnn_rl_trade_hold_temperature: 0.25
+  direct_rnn_rl_trade_threshold: 0.55
+  # Every context owner persists its own settled recent/diverse/anchor
+  # evidence. Replay is copied into the existing AdamW batch; the store never
+  # writes weights. Positive lifecycle anchors receive behavior distillation,
+  # while hard-negative counterfactuals remain persistent label replay.
+  direct_rnn_rl_retention_enabled: false
+  direct_rnn_rl_retention_recent_capacity: 64
+  direct_rnn_rl_retention_diverse_capacity: 128
+  direct_rnn_rl_retention_anchor_capacity: 64
+  direct_rnn_rl_retention_replay_items_per_batch: 8
+  direct_rnn_rl_retention_replay_weight: 0.50
+  direct_rnn_rl_retention_distillation_weight: 0.10
+  direct_rnn_rl_retention_anchor_min_r: 0.25
+  # Reject an AdamW step atomically if it becomes non-finite, too large, or
+  # worsens cached-representation anchor KL beyond tolerance. Optimizer
+  # moments and step counter roll back together with every Direct-RNN tensor.
+  direct_rnn_rl_retention_audit_min_anchors: 2
+  direct_rnn_rl_retention_max_anchor_kl_increase: 0.02
+  direct_rnn_rl_retention_max_update_norm: 1.0
+  # One mature immutable path emits 55 masked auxiliary targets: multi-horizon
+  # direction, return quantiles, volatility and per-action fill/time/MFE/MAE/
+  # expected-R/SL/TP/timing quality. Input reconstruction adds a causal
+  # self-supervised signal. These heads never score or gate live actions.
+  direct_rnn_rl_auxiliary_enabled: false
+  direct_rnn_rl_auxiliary_loss_weight: 0.0
+  direct_rnn_rl_reconstruction_loss_weight: 0.0
+  # A training-only quality probe is indexed by immutable
+  # (context, action, side). It learns that a MARKET_BUY can be structurally
+  # good or a late chase; it never appears in inference or writes outside the
+  # same lifecycle Full-RL AdamW batch. PCGrad removes only anti-actor encoder
+  # pressure, leaving the private quality head supervised.
+  direct_rnn_rl_conditioned_representation_enabled: true
+  direct_rnn_rl_conditioned_representation_loss_weight: 0.05
+  direct_rnn_rl_conditioned_representation_min_abs_r: 0.10
+  direct_rnn_rl_conditioned_representation_positive_weight: 1.25
+  direct_rnn_rl_conditioned_representation_requires_actor_evidence: true
+  direct_rnn_rl_conditioned_representation_conflict_mode: pcgrad_v1
+  # V179: replay path labels every legal entry alternative. Train those
+  # (context, action, side) quality rows inside the same Full-RL AdamW batch.
+  direct_rnn_rl_counterfactual_representation_enabled: false
+  direct_rnn_rl_counterfactual_representation_loss_weight: 0.08
+  direct_rnn_rl_counterfactual_representation_temperature: 0.50
+  # Candidate Full-RL: dùng residual so với critic cache tại entry, nhưng net
+  # win yếu không được biến thành actor penalty chỉ vì critic còn non. Chỉ
+  # actor dùng residual chuẩn hóa; value head vẫn fit canonical raw-R MT5.
+  direct_rnn_rl_advantage_mode: critic_asymmetric_v1
+  direct_rnn_rl_critic_warmup_lifecycles: 32
+  direct_rnn_rl_critic_max_weight: 0.85
+  direct_rnn_rl_profit_floor: 0.05
+  direct_rnn_rl_loss_floor: 0.05
+  direct_rnn_rl_advantage_normalization_enabled: true
+  direct_rnn_rl_advantage_norm_decay: 0.95
+  direct_rnn_rl_advantage_norm_scale_floor: 0.35
+  direct_rnn_rl_advantage_norm_clip: 2.5
+  # Credit qua state base + toàn bộ six-block recurrent stack của 8 tick gần nhất.
+  direct_rnn_rl_temporal_bptt_steps: 16
+  # 0 = không compact trace execution. Chỉ dùng trong candidate debug hữu
+  # hạn này để lifecycle cũ còn đủ hidden state cho attribution hậu kiểm.
+  execution_trace_observatory_max_bytes: 0
+  # Dedicated TimingNet is candidate-only; protected v13 remains unchanged.
+  timing_network_enabled: false
+  # TimingNet chỉ là telemetry/candidate research trong Full-RL; không còn là
+  # overlay đổi action của Direct-RNN. Candidate được huấn luyện riêng bằng
+  # nhãn M15 có độ trễ, không được nhận PnL/lifecycle của policy.
+  timing_network_action_scale: 0.0
+  # Tách hẳn actor PnL của policy: lifecycle credit không được ghi vào
+  # TimingNet trong profile này. AdamW chỉ dùng cho task M15 auxiliary.
+  timing_network_update_scale: 1.0
+  timing_network_lifecycle_scale: 0.0
+  timing_network_learning_rate: 0.01
+  timing_network_hidden_size: 32
+  timing_network_embedding_size: 16
+  timing_network_bptt_window: 24
+  # Causal representation tensor: 32 closed M15 rows x 78 market/timing/
+  # Wyckoff values. The EA bridge stays at 137 columns; this buffer is local
+  # to TimingNet and is evaluated only once per M15 signature.
+  timing_network_sequence_length: 32
+  timing_network_eligibility_decay: 0.90
+  timing_network_gradient_clip: 1.0
+  # Causal auxiliary task: at t, predict whether the exact live trend score
+  # will be closer to 0 after three closed-M15 observations. No future bar/PnL
+  # enters the t prediction; labels settle only at later M15 states.
+  timing_network_deceleration_enabled: true
+  timing_network_deceleration_horizon: 3
+  timing_network_deceleration_min_trend_strength: 0.18
+  timing_network_deceleration_min_drop: 0.10
+  timing_network_deceleration_update_scale: 1.0
+  # Logistic auxiliary head: this is deliberately separate from the slower
+  # realised-R update. The encoder receives only 10% of this label gradient
+  # and the head has L2 shrinkage, so faster calibration does not turn into a
+  # wholesale policy/representation rewrite.
+  timing_network_deceleration_learning_rate: 0.01
+  timing_network_deceleration_encoder_scale: 0.10
+  timing_network_deceleration_l2: 1.0e-4
+  # A second causal task: from market/timing/Wyckoff inputs at t, predict the
+  # confirmed stable owner context at t+H M15 observations. Labels settle after later M15 states
+  # only. Its nearest horizon can block a new entry only after the calibration
+  # guard above proves precision and Brier quality.
+  timing_network_regime_transition_enabled: true
+  timing_network_regime_transition_horizons: [3, 6, 12]
+  timing_network_regime_transition_update_scale: 0.25
+  timing_network_regime_transition_learning_rate: 0.01
+  timing_network_regime_transition_encoder_scale: 0.08
+  timing_network_regime_transition_l2: 1.0e-4
+  # v146: AdamW + cosine operate only in SWATS's pre-switch Adam phase.
+  # Once SGD is selected, PID is the sole LR controller; cosine cannot fight
+  # the safety loop.  This config is never applied to the protected v13 seed.
+  timing_network_swats_enabled: true
+  timing_network_pid_enabled: true
+  timing_network_adam_beta1: 0.90
+  timing_network_adam_beta2: 0.999
+  timing_network_adam_epsilon: 1.0e-8
+  timing_network_adamw_enabled: true
+  timing_network_adamw_weight_decay: 1.0e-3
+  timing_network_cosine_annealing_enabled: true
+  timing_network_cosine_min_factor: 0.40
+  timing_network_cosine_cycle_steps: 32
+  timing_network_projection_beta: 0.90
+  timing_network_projection_tolerance: 0.15
+  timing_network_switch_consecutive: 4
+  timing_network_min_projection_steps: 8
+  timing_network_target_alignment: 0.90
+  timing_network_sgd_eta_min: 1.0e-6
+  timing_network_sgd_eta_max: 0.004
+  timing_network_sgd_eta_init_factor: 0.90
+  timing_network_pid_kp: 0.08
+  timing_network_pid_ki: 0.01
+  timing_network_pid_kd: 0.02
+  timing_network_pid_integral_limit: 2.0
+  timing_network_pid_derivative_ema: 0.80
+  timing_network_pid_deadband: 0.02
+  timing_network_pid_r_target: 0.0
+  timing_network_pid_r_scale_floor: 0.25
+  timing_network_pid_alignment_weight: 0.70
+  timing_network_pid_r_weight: 0.30
+  timing_network_pid_bad_steps_to_freeze: 4
+  timing_network_pid_recovery_steps: 3
+  timing_network_pid_cooldown_steps: 8
+  timing_network_pid_fallback_to_adam: true
+  session_timezone: UTC
+  mt5_server_utc_offset_hours: 0
+  spread_semantics: ask_minus_bid_price
+  experience_buffer_max: 8192
+  rejection_memory_max: 4096
+  execution_trace_cache_max: 16384
+  memory_neurons_max: 8192
+  memory_connections_max: 32768
+  mistake_episodes_max: 4096
+  # Ba candidate seed doc lap; moi candidate hash phai survive cung ba cua so
+  # frozen OOS. Training/replay van chay; cac field nay chi cap quyen promotion.
+  promotion_min_oos_windows: 3
+  promotion_min_seeds: 3
+  promotion_require_fitness_eligible: true
+  promotion_require_reconciled: true
+  promotion_min_oos_trades: 30
+  promotion_max_oos_drawdown_pct: 10.0
+  promotion_min_policy_expectancy_lcb: 0.0
+  promotion_max_negative_context_scopes: 0
+  promotion_require_feature_parity: true
+  promotion_require_real_tick_evidence: true
+
+observability:
+  enabled: false
+  event_path: outputs/quan_sat_chuyen_gia_live.jsonl
+  decision_profile_path: outputs/ho_so_quyet_dinh_chi_tiet.jsonl
+  structural_event_path: outputs/nhat_ky_phat_trien_neuron_lien_ket.jsonl
+  network_development_path: outputs/theo_doi_phat_trien_mang.jsonl
+  # Lifecycle/feedback events remain complete.  Decision topology is sampled
+  # so a 15-day MT5 train can complete without the observatory becoming the
+  # bottleneck. Full network snapshots at feedback are sampled separately;
+  # lifecycle and structural evidence remain unsampled.
+  decision_sample_every: 25
+  network_development_feedback_sample_every: 25
+  max_event_bytes: 0
+  max_active_nodes: 20
+  max_active_edges: 40
+  max_state_nodes: 20
+  max_state_edges: 40
+  max_responsible_neurons: 20
+  max_responsible_edges: 40
