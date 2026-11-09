@@ -1656,33 +1656,33 @@ class MythosMT5Policy:
         elif net_dir == -1 and lw_val >= 0.40:
             net_dir = 0  # Do not sell into an extreme lower rejection wick
 
-        # Higher Timeframe (HTF) Macro Alignment Guard (Strict Trend Confluence: never fight M1/M15/H1 trend)
+        # Higher Timeframe (HTF) & Macro Trend Alignment Guard (Iteration 30 Champion Foundation)
         m15_diff = float(base_obs_137[36]) if base_obs_137.size > 36 else 0.0
         h1_diff = float(base_obs_137[40]) if base_obs_137.size > 40 else 0.0
         trend_str = float(base_obs_137[44]) if base_obs_137.size > 44 else 0.0
         chop_idx = float(base_obs_137[45]) if base_obs_137.size > 45 else 0.50
 
-        # Strict Multi-Timeframe Directional Confluence:
-        # Absolutely forbid selling when M1 or M15 or H1 is in an uptrend
-        if net_dir == -1 and (ema_diff_val > 0.0 or m15_diff > 0.0 or h1_diff > 0.0):
+        # Strict Trend-Following: never fight the macro trend (Iteration 30 Proven Rule)
+        # Strictly forbid shorting when M1 trend or HTF trend is bullish:
+        if net_dir == -1 and (ema_diff_val > -0.05 or p_vs_e50_val > 0.10 or h1_diff > 0.01 or m15_diff > 0.02):
             net_dir = 0
-        # Absolutely forbid buying when M1 or M15 or H1 is in a downtrend
-        elif net_dir == 1 and (ema_diff_val < 0.0 or m15_diff < 0.0 or h1_diff < 0.0):
+        # Strictly forbid buying when M1 trend or HTF trend is bearish:
+        elif net_dir == 1 and (ema_diff_val < 0.05 or p_vs_e50_val < -0.10 or h1_diff < -0.01 or m15_diff < -0.02):
             net_dir = 0
 
-        # Structural M1 Breakdown / Fakeout Guard:
-        if net_dir == 1 and p_vs_e50_val < -0.50:
-            net_dir = 0  # Do not buy if M1 is broken deeply below EMA50
-        elif net_dir == -1 and p_vs_e50_val > 0.50:
-            net_dir = 0  # Do not sell if M1 is broken deeply above EMA50
+        # Structural Anti-Wick Guard (Prevents buying candle wick tops or selling candle wick bottoms):
+        if net_dir == 1 and uw_val >= 0.40:
+            net_dir = 0  # Do not buy into an extreme upper rejection wick
+        elif net_dir == -1 and lw_val >= 0.40:
+            net_dir = 0  # Do not sell into an extreme lower rejection wick
 
         # Value Zone Pullback Guard (Anti-Chasing: do not buy tops or sell bottoms)
-        if net_dir == 1 and p_vs_e20_val > 1.25:
-            net_dir = 0  # Do not chase extended rallies stretched > 1.25 ATR above EMA20
-        elif net_dir == -1 and p_vs_e20_val < -1.25:
-            net_dir = 0  # Do not chase extended dumps stretched > 1.25 ATR below EMA20
+        if net_dir == 1 and p_vs_e20_val > 1.35:
+            net_dir = 0  # Do not chase extended rallies stretched > 1.35 ATR above EMA20
+        elif net_dir == -1 and p_vs_e20_val < -1.35:
+            net_dir = 0  # Do not chase extended dumps stretched > 1.35 ATR below EMA20
 
-        # Champion Market Regime / Sideway (CHOP) Guard (Definitive Milestone 3 Defense)
+        # Champion Market Regime / Sideway (CHOP) Guard (Milestone 2/3 Defense):
         detected_regime = None
         regime_probs = None
         if getattr(self, "regime_detector", None) is not None and net_dir != 0:
@@ -1725,22 +1725,17 @@ class MythosMT5Policy:
         if getattr(self, "max_packets", 0) > 0 and self.seq_counter >= self.max_packets - 15:
             net_dir = 0
 
-        # Multi-position laddering & concurrency guards (High Frequency + Controlled Pyramiding):
+        # High-Frequency Multi-Position Spacing Guard:
         spacing_ok = True
         bars_since = self.seq_counter - self._last_entry_bar
         min_spacing_bars = max(1, int(getattr(self, "min_spacing_bars", 1)))
         if bars_since < min_spacing_bars:
             spacing_ok = False
         elif active_positions > 0 and self._last_entry_price is not None:
-            price_diff = self.current_price - self._last_entry_price
-            min_dist = 0.15 * cur_atr
-            max_adverse = 0.80 * cur_atr
-            if abs(price_diff) < min_dist:
-                spacing_ok = False  # Avoid duplicate entries at identical price
-            elif net_dir == 1 and price_diff < -max_adverse:
-                spacing_ok = False  # Anti-falling knife: don't add if price collapsed > 0.80 ATR
-            elif net_dir == -1 and price_diff > max_adverse:
-                spacing_ok = False  # Anti-falling knife: don't add if price spiked > 0.80 ATR
+            # Require minimum price distance of 0.20 ATR to prevent duplicate fills at exact same tick
+            price_dist = abs(self.current_price - self._last_entry_price)
+            if price_dist < 0.20 * cur_atr:
+                spacing_ok = False
 
         can_open = spacing_ok and (max_positions <= 0 or active_positions < max_positions)
 

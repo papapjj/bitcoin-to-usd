@@ -123,11 +123,11 @@ def run_mythos_mt5(
     mythos_policy.scalp_tp_rr = 1.50
     mythos_policy.trailing_atr = 1.40
     mythos_policy.long_only = False
-    mythos_policy.max_positions = 5
+    mythos_policy.max_positions = 4
     mythos_policy.max_consecutive_losses = 2
     mythos_policy.loss_cooldown_bars = 2
     mythos_policy.min_spacing_bars = 1
-    mythos_policy.prm_threshold = 0.12
+    mythos_policy.prm_threshold = 0.25
     mythos_policy.runner_dir = runner_dir
     try:
         from self_growing_trader.regime_detector import RegimeDetector
@@ -206,7 +206,7 @@ def run_mythos_mt5(
         "timeout_sec": timeout_sec,
         "max_wall_sec": 0,  # Never abort midway on wall clock
         "max_decision_packets": packets,  # Cleanly stop via EA after N decision packets
-        "max_positions": 5,
+        "max_positions": 4,
         "fixed_sl_atr": 2.40,
         "fixed_tp_atr": 3.60,
         "min_rr": 0.90,
